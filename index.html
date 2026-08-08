@@ -200,7 +200,7 @@
   <!-- Sensor Grid Layout -->
   <div class="sensor-grid">
 
-    <!-- 1. Floor Level (BMP180) -->
+    <!-- 1. Floor Level & Pressure (BMP280) -->
     <div class="card" id="cardFloor">
       <div class="card-header">
         <span class="card-title"><i class="fa-solid fa-layer-group card-icon"></i> Building Floor</span>
@@ -215,7 +215,22 @@
       </div>
     </div>
 
-    <!-- 2. Body Temperature (DS18B20) -->
+    <!-- 2. Environment Temp (BMP280) -->
+    <div class="card" id="cardEnvTemp">
+      <div class="card-header">
+        <span class="card-title"><i class="fa-solid fa-cloud-sun card-icon"></i> Environment Temp</span>
+        <span class="tag-status tag-normal" id="tagEnvTemp">NORMAL</span>
+      </div>
+      <div class="value-box">
+        <div class="live-val"><span id="envTemp">0.0</span> <span class="unit">°C</span></div>
+      </div>
+      <div class="comparison-box">
+        <span class="normal-label">Ambient Limit:</span>
+        <span class="normal-val">&lt; 45.0°C</span>
+      </div>
+    </div>
+
+    <!-- 3. Body Temperature (DS18B20) -->
     <div class="card" id="cardTemp">
       <div class="card-header">
         <span class="card-title"><i class="fa-solid fa-temperature-high card-icon"></i> Body Temperature</span>
@@ -230,7 +245,7 @@
       </div>
     </div>
 
-    <!-- 3. Heart Rate & SpO2 (MAX30102) -->
+    <!-- 4. Heart Rate & SpO2 (MAX30102) -->
     <div class="card" id="cardPulse">
       <div class="card-header">
         <span class="card-title"><i class="fa-solid fa-heart-pulse card-icon"></i> Heart Rate & SpO2</span>
@@ -245,7 +260,7 @@
       </div>
     </div>
 
-    <!-- 4. Air Quality & Toxic Gas (MQ-2) -->
+    <!-- 5. Air Quality & Toxic Gas (MQ-2) -->
     <div class="card" id="cardGas">
       <div class="card-header">
         <span class="card-title"><i class="fa-solid fa-wind card-icon"></i> Gas Level (MQ-2)</span>
@@ -260,7 +275,7 @@
       </div>
     </div>
 
-    <!-- 5. Fall & Impact Detection (MPU6050) -->
+    <!-- 6. Fall & Impact Detection (MPU6050) -->
     <div class="card" id="cardMotion">
       <div class="card-header">
         <span class="card-title"><i class="fa-solid fa-person-falling card-icon"></i> Impact / Fall (G-Force)</span>
@@ -287,7 +302,7 @@
   <script>
     // --- Firebase Initialization with Safety Check ---
     const firebaseConfig = {
-      databaseURL: "https://your-project-default-rtdb.firebaseio.com/" // ⚠️ আপনার Firebase URL এখানে পরিবর্তন করুন
+      databaseURL: "https://spry-smithy-461617-f5-default-rtdb.firebaseio.com/"
     };
     
     let db = null;
@@ -333,7 +348,6 @@
         document.getElementById('wID').innerText = id;
         document.getElementById('wSite').innerText = site;
 
-        // Modal টি সরাসরি বন্ধ হবে
         document.getElementById('loginModal').style.display = 'none';
       } else {
         alert("Please complete all three input fields.");
@@ -368,6 +382,7 @@
 
         const floorVal = safeNum(data.floor, 0);
         const pressureVal = safeNum(data.pressure, 0);
+        const envTempVal = safeNum(data.envTemp || data.bmpTemp, 0);
         const bodyTempVal = safeNum(data.bodyTemp, 0);
         const heartRateVal = safeNum(data.heartRate, 0);
         const spo2Val = safeNum(data.spo2, 0);
@@ -378,6 +393,7 @@
 
         document.getElementById('floor').innerText = floorVal;
         document.getElementById('pressure').innerText = pressureVal;
+        document.getElementById('envTemp').innerText = envTempVal.toFixed(1);
         document.getElementById('temp').innerText = bodyTempVal.toFixed(1);
         document.getElementById('hr').innerText = heartRateVal;
         document.getElementById('spo2').innerText = spo2Val;
@@ -398,17 +414,19 @@
           gpsBtn.style.background = "#475569";
         }
 
-        const isTempAbnormal = bodyTempVal > 38.0 || (bodyTempVal < 35.0 && bodyTempVal > 0);
+        const isEnvTempAbnormal = envTempVal > 45.0;
+        const isBodyTempAbnormal = bodyTempVal > 38.0 || (bodyTempVal < 35.0 && bodyTempVal > 0);
         const isGasAbnormal = gasVal > 600;
         const isImpactAbnormal = accelVal > 2.5;
         const isPulseAbnormal = (spo2Val > 0 && spo2Val < 92) || heartRateVal > 120;
 
-        updateCardState('cardTemp', 'tagTemp', isTempAbnormal, "HIGH TEMP");
+        updateCardState('cardEnvTemp', 'tagEnvTemp', isEnvTempAbnormal, "HIGH HEAT");
+        updateCardState('cardTemp', 'tagTemp', isBodyTempAbnormal, "HIGH TEMP");
         updateCardState('cardGas', 'tagGas', isGasAbnormal, "HIGH GAS");
         updateCardState('cardMotion', 'tagMotion', isImpactAbnormal, "FALL DETECTED");
         updateCardState('cardPulse', 'tagPulse', isPulseAbnormal, "ABNORMAL");
 
-        const hasEmergency = isTempAbnormal || isGasAbnormal || isImpactAbnormal || isPulseAbnormal || Boolean(data.alert);
+        const hasEmergency = isEnvTempAbnormal || isBodyTempAbnormal || isGasAbnormal || isImpactAbnormal || isPulseAbnormal || Boolean(data.alert);
 
         const statusBanner = document.getElementById('statusBanner');
         const statusText = document.getElementById('statusText');
