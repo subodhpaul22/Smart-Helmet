@@ -218,7 +218,7 @@
     <!-- 2. Environment Temp (BMP280) -->
     <div class="card" id="cardEnvTemp">
       <div class="card-header">
-        <span class="card-title"><i class="fa-solid fa-cloud-sun card-icon"></i> Environment Temp</span>
+        <span class="card-title"><i class="fa-solid fa-cloud-sun card-icon"></i> Environment Temp (BMP280)</span>
         <span class="tag-status tag-normal" id="tagEnvTemp">NORMAL</span>
       </div>
       <div class="value-box">
@@ -382,7 +382,10 @@
 
         const floorVal = safeNum(data.floor, 0);
         const pressureVal = safeNum(data.pressure, 0);
-        const envTempVal = safeNum(data.envTemp || data.bmpTemp, 0);
+        
+        // Comprehensive fallback for BMP280 temperature key names from ESP32
+        const envTempVal = safeNum(data.envTemp ?? data.bmpTemp ?? data.bmp280Temp ?? data.temperature, 0);
+        
         const bodyTempVal = safeNum(data.bodyTemp, 0);
         const heartRateVal = safeNum(data.heartRate, 0);
         const spo2Val = safeNum(data.spo2, 0);
