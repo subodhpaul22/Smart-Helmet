@@ -245,9 +245,10 @@
           <div class="metric-details"><span class="metric-label">Heart Rate (HR) & SpO₂</span><span class="metric-value"><span id="valHeart">0</span> <small style="font-size:12px; font-weight:normal;">bpm</small> | <span id="valSpo2">0</span><small style="font-size:12px; font-weight:normal;">%</small></span></div>
         </div>
 
+        <!-- Body Temp in Fahrenheit °F & Env Temp in Celsius °C -->
         <div class="metric-card">
           <div class="metric-icon icon-temp"><i class="fa-solid fa-temperature-high"></i></div>
-          <div class="metric-details"><span class="metric-label">Body & Env Temp</span><span class="metric-value">Body: <span id="valBodyTemp">0</span>°C | Env: <span id="valEnvTemp">0</span>°C</span></div>
+          <div class="metric-details"><span class="metric-label">Body & Env Temp</span><span class="metric-value">Body: <span id="valBodyTemp">0</span>°F | Env: <span id="valEnvTemp">0</span>°C</span></div>
         </div>
 
         <div class="metric-card">
@@ -276,7 +277,7 @@
     let activeWorker = null;
     let audioMuted = false;
     let lastCriticalState = false;
-    let deviceWatchdogTimer = null; // Watchdog timer to detect hardware disconnect
+    let deviceWatchdogTimer = null;
 
     const siren = document.getElementById('sirenSound');
 
@@ -447,20 +448,26 @@
             return;
           }
 
-          // Reset Watchdog Timer (If no new payload arrives in 10 seconds, mark OFFLINE)
+          // Reset Watchdog Timer
           clearTimeout(deviceWatchdogTimer);
           deviceWatchdogTimer = setTimeout(() => {
             setHardwareOfflineState();
-          }, 10000); // 10 sec timeout
+          }, 10000);
 
-          // Mark Hardware ONLINE as valid data was received
           setHardwareOnlineState();
 
           const floorVal = safeNum(data.floor);
           const pressureVal = safeNum(data.pressure);
           const heartRateVal = safeNum(data.heartRate);
           const spo2Val = safeNum(data.spo2);
-          const bodyTempVal = safeNum(data.bodyTemp);
+          
+          // Body Temp Conversion: If value is in Celsius (e.g., < 60), convert to °F. If hardware sends °F directly, use as is.
+          let rawBodyTemp = safeNum(data.bodyTemp);
+          let bodyTempFahrenheit = 0;
+          if (rawBodyTemp > 0) {
+            bodyTempFahrenheit = rawBodyTemp < 60 ? (rawBodyTemp * 1.8 + 32) : rawBodyTemp;
+          }
+
           const envTempVal = safeNum(data.envTemp ?? data.temperature);
           const gasVal = safeNum(data.gas);
           const accelVal = safeNum(data.accel);
@@ -472,7 +479,7 @@
           document.getElementById('valPressure').innerText = pressureVal;
           document.getElementById('valHeart').innerText = heartRateVal;
           document.getElementById('valSpo2').innerText = spo2Val;
-          document.getElementById('valBodyTemp').innerText = bodyTempVal.toFixed(1);
+          document.getElementById('valBodyTemp').innerText = bodyTempFahrenheit.toFixed(1);
           document.getElementById('valEnvTemp').innerText = envTempVal.toFixed(1);
           document.getElementById('valGas').innerText = gasVal;
           document.getElementById('valAccel').innerText = accelVal.toFixed(1);
@@ -495,8 +502,8 @@
             document.getElementById('valGps').href = "#";
           }
 
-          // Emergency Detection
-          const isCritical = gasVal > 600 || accelVal > 2.5 || (bodyTempVal > 38.0) || (spo2Val > 0 && spo2Val < 92);
+          // Emergency Detection (Critical if body temp exceeds 100.4°F)
+          const isCritical = gasVal > 600 || accelVal > 2.5 || (bodyTempFahrenheit > 100.4) || (spo2Val > 0 && spo2Val < 92);
           const statusBanner = document.getElementById('statusBanner');
           const statusText = document.getElementById('statusText');
           const statusIcon = document.getElementById('statusIcon');
@@ -509,7 +516,7 @@
             if (!audioMuted) siren.play().catch(e => {});
 
             if (!lastCriticalState) {
-              triggerPopup("EMERGENCY ALERT", "Hazardous condition or fall detected on live sensors!", "fa-triangle-exclamation", "#ef4444");
+              triggerPopup("EMERGENCY ALERT", "Hazardous condition or high fever detected on live sensors!", "fa-triangle-exclamation", "#ef4444");
               lastCriticalState = true;
             }
           } else {
