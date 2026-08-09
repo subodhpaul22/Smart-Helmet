@@ -133,7 +133,15 @@
     }
     .metric-details { display: flex; flex-direction: column; flex: 1; }
     .metric-label { font-size: 11px; font-weight: 600; color: #64748b; }
-    .metric-value { font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 1px; }
+    .metric-value { font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 1px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+
+    /* Safe Value & Highlight Badges */
+    .safe-range-text { font-size: 10px; color: #64748b; margin-top: 3px; font-weight: 600; }
+    .status-tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+    .tag-normal { background: #dcfce7; color: #15803d; }
+    .tag-high { background: #fee2e2; color: #b91c1c; }
+    .tag-low { background: #fef3c7; color: #b45309; }
+    .tag-off { background: #f1f5f9; color: #64748b; }
 
     .icon-heart { background: #ffe4e6; color: #e11d48; }
     .icon-temp { background: #fef3c7; color: #d97706; }
@@ -229,41 +237,84 @@
         </div>
       </div>
 
+      <!-- METRICS GRID WITH SAFE VALUES & STATUS HIGHLIGHTS -->
       <div class="metrics-grid">
         <div class="metric-card">
           <div class="metric-icon icon-floor"><i class="fa-solid fa-building"></i></div>
-          <div class="metric-details"><span class="metric-label">Floor Level</span><span class="metric-value"><span id="valFloor">0</span> <small style="font-size:12px; font-weight:normal;">Floor</small></span></div>
+          <div class="metric-details">
+            <span class="metric-label">Floor Level</span>
+            <span class="metric-value">
+              <span id="valFloor">0</span> <small style="font-size:12px; font-weight:normal;">Floor</small>
+              <span id="tagFloor" class="status-tag tag-off">OFFLINE</span>
+            </span>
+            <span class="safe-range-text">Safe Default: 0 - 50 Floor</span>
+          </div>
         </div>
 
         <div class="metric-card">
           <div class="metric-icon icon-pressure"><i class="fa-solid fa-gauge-high"></i></div>
-          <div class="metric-details"><span class="metric-label">Air Pressure</span><span class="metric-value"><span id="valPressure">0</span> <small style="font-size:12px; font-weight:normal;">hPa</small></span></div>
+          <div class="metric-details">
+            <span class="metric-label">Air Pressure</span>
+            <span class="metric-value">
+              <span id="valPressure">0</span> <small style="font-size:12px; font-weight:normal;">hPa</small>
+              <span id="tagPressure" class="status-tag tag-off">OFFLINE</span>
+            </span>
+            <span class="safe-range-text">Safe Default: 950 - 1050 hPa</span>
+          </div>
         </div>
 
         <div class="metric-card">
           <div class="metric-icon icon-heart"><i class="fa-solid fa-heart-pulse"></i></div>
-          <div class="metric-details"><span class="metric-label">Heart Rate (HR) & SpO₂</span><span class="metric-value"><span id="valHeart">0</span> <small style="font-size:12px; font-weight:normal;">bpm</small> | <span id="valSpo2">0</span><small style="font-size:12px; font-weight:normal;">%</small></span></div>
+          <div class="metric-details">
+            <span class="metric-label">Heart Rate (HR) & SpO₂</span>
+            <span class="metric-value">
+              <span id="valHeart">0</span><small style="font-size:12px; font-weight:normal;">bpm</small> | <span id="valSpo2">0</span><small style="font-size:12px; font-weight:normal;">%</small>
+              <span id="tagHeart" class="status-tag tag-off">OFFLINE</span>
+            </span>
+            <span class="safe-range-text">Safe Default: HR 60-100 bpm | SpO₂ ≥ 95%</span>
+          </div>
         </div>
 
-        <!-- Body Temp in Fahrenheit °F & Env Temp in Celsius °C -->
         <div class="metric-card">
           <div class="metric-icon icon-temp"><i class="fa-solid fa-temperature-high"></i></div>
-          <div class="metric-details"><span class="metric-label">Body & Env Temp</span><span class="metric-value">Body: <span id="valBodyTemp">0</span>°F | Env: <span id="valEnvTemp">0</span>°C</span></div>
+          <div class="metric-details">
+            <span class="metric-label">Body & Env Temp</span>
+            <span class="metric-value">
+              Body: <span id="valBodyTemp">0</span>°F | Env: <span id="valEnvTemp">0</span>°C
+              <span id="tagBodyTemp" class="status-tag tag-off">OFFLINE</span>
+            </span>
+            <span class="safe-range-text">Safe Default: Body 97-99°F | Env &lt; 40°C</span>
+          </div>
         </div>
 
         <div class="metric-card">
           <div class="metric-icon icon-gas"><i class="fa-solid fa-fire"></i></div>
-          <div class="metric-details"><span class="metric-label">Gas Level (MQ-2)</span><span class="metric-value"><span id="valGas">0</span> <small style="font-size:12px; font-weight:normal;">ppm</small></span></div>
+          <div class="metric-details">
+            <span class="metric-label">Gas Level (MQ-2)</span>
+            <span class="metric-value">
+              <span id="valGas">0</span> <small style="font-size:12px; font-weight:normal;">ppm</small>
+              <span id="tagGas" class="status-tag tag-off">OFFLINE</span>
+            </span>
+            <span class="safe-range-text">Safe Default: &lt; 400 ppm</span>
+          </div>
         </div>
 
         <div class="metric-card">
           <div class="metric-icon icon-fall"><i class="fa-solid fa-person-falling"></i></div>
-          <div class="metric-details"><span class="metric-label">Motion / Fall (<span id="valAccel">0.0</span>G)</span><span class="metric-value" id="valMotionText">Offline <small style="font-size:12px; color:#64748b;">No Signal</small></span></div>
+          <div class="metric-details">
+            <span class="metric-label">Motion / Fall (<span id="valAccel">0.0</span>G)</span>
+            <span class="metric-value" id="valMotionText">No Detect</span>
+            <span class="safe-range-text">Safe Default: Normal (&lt; 2.5G)</span>
+          </div>
         </div>
 
         <div class="metric-card">
           <div class="metric-icon icon-gps"><i class="fa-solid fa-location-dot"></i></div>
-          <div class="metric-details"><span class="metric-label">GPS Location</span><a id="valGps" href="#" target="_blank" style="font-size:13px; font-weight:700; color:#64748b; text-decoration:none;">GPS Offline</a></div>
+          <div class="metric-details">
+            <span class="metric-label">GPS Location</span>
+            <a id="valGps" href="#" target="_blank" style="font-size:13px; font-weight:700; color:#64748b; text-decoration:none;">GPS No Detect</a>
+            <span class="safe-range-text">Safe Default: Active Live Lock</span>
+          </div>
         </div>
       </div>
     </div>
@@ -399,8 +450,17 @@
       document.getElementById('valEnvTemp').innerText = "0";
       document.getElementById('valGas').innerText = "0";
       document.getElementById('valAccel').innerText = "0.0";
-      document.getElementById('valMotionText').innerHTML = 'Offline <small style="font-size:12px; color:#64748b;">No Signal</small>';
-      document.getElementById('valGps').innerText = "GPS Offline";
+
+      // Replace Offline text with No Detect for Motion
+      document.getElementById('valMotionText').innerHTML = 'No Detect <span class="status-tag tag-off">OFFLINE</span>';
+      
+      // Tags Reset
+      ['tagFloor', 'tagPressure', 'tagHeart', 'tagBodyTemp', 'tagGas'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) { el.innerText = "OFFLINE"; el.className = "status-tag tag-off"; }
+      });
+
+      document.getElementById('valGps').innerText = "GPS No Detect";
       document.getElementById('valGps').style.color = "#64748b";
       document.getElementById('valGps').href = "#";
 
@@ -422,6 +482,14 @@
     function safeNum(val) {
       const n = parseFloat(val);
       return isNaN(n) ? 0 : n;
+    }
+
+    // Helper to set tag state
+    function updateTag(tagId, statusText, statusType) {
+      const el = document.getElementById(tagId);
+      if(!el) return;
+      el.innerText = statusText;
+      el.className = `status-tag tag-${statusType}`; // normal, high, low, off
     }
 
     window.onload = function() {
@@ -461,12 +529,8 @@
           const heartRateVal = safeNum(data.heartRate);
           const spo2Val = safeNum(data.spo2);
           
-          // Body Temp Conversion: If value is in Celsius (e.g., < 60), convert to °F. If hardware sends °F directly, use as is.
           let rawBodyTemp = safeNum(data.bodyTemp);
-          let bodyTempFahrenheit = 0;
-          if (rawBodyTemp > 0) {
-            bodyTempFahrenheit = rawBodyTemp < 60 ? (rawBodyTemp * 1.8 + 32) : rawBodyTemp;
-          }
+          let bodyTempFahrenheit = rawBodyTemp > 0 ? (rawBodyTemp < 60 ? (rawBodyTemp * 1.8 + 32) : rawBodyTemp) : 0;
 
           const envTempVal = safeNum(data.envTemp ?? data.temperature);
           const gasVal = safeNum(data.gas);
@@ -474,7 +538,7 @@
           const latVal = safeNum(data.lat);
           const lngVal = safeNum(data.lng);
 
-          // Update UI Values
+          // Update UI Numerical Values
           document.getElementById('valFloor').innerText = floorVal;
           document.getElementById('valPressure').innerText = pressureVal;
           document.getElementById('valHeart').innerText = heartRateVal;
@@ -484,11 +548,30 @@
           document.getElementById('valGas').innerText = gasVal;
           document.getElementById('valAccel').innerText = accelVal.toFixed(1);
 
-          // Motion Status
+          // Dynamic Status Tag Highlights (HIGH / LOW / NORMAL)
+          updateTag('tagFloor', 'NORMAL', 'normal');
+
+          if (pressureVal < 950) updateTag('tagPressure', 'LOW', 'low');
+          else if (pressureVal > 1050) updateTag('tagPressure', 'HIGH', 'high');
+          else updateTag('tagPressure', 'NORMAL', 'normal');
+
+          if (heartRateVal > 100 || (spo2Val > 0 && spo2Val < 92)) updateTag('tagHeart', heartRateVal > 100 ? 'HIGH' : 'LOW', heartRateVal > 100 ? 'high' : 'low');
+          else updateTag('tagHeart', 'NORMAL', 'normal');
+
+          if (bodyTempFahrenheit > 100.4) updateTag('tagBodyTemp', 'HIGH', 'high');
+          else if (bodyTempFahrenheit > 0 && bodyTempFahrenheit < 95) updateTag('tagBodyTemp', 'LOW', 'low');
+          else updateTag('tagBodyTemp', 'NORMAL', 'normal');
+
+          if (gasVal > 400) updateTag('tagGas', 'HIGH', 'high');
+          else updateTag('tagGas', 'NORMAL', 'normal');
+
+          // Motion Status Update
           if (accelVal > 2.5) {
-            document.getElementById('valMotionText').innerHTML = 'Fall <small style="font-size:12px; color:#ef4444; font-weight:bold;">Detected!</small>';
+            document.getElementById('valMotionText').innerHTML = 'Fall Detected <span class="status-tag tag-high">HIGH</span>';
+          } else if (accelVal > 0) {
+            document.getElementById('valMotionText').innerHTML = 'Normal <span class="status-tag tag-normal">NORMAL</span>';
           } else {
-            document.getElementById('valMotionText').innerHTML = 'Normal <small style="font-size:12px; color:#16a34a;">Safe</small>';
+            document.getElementById('valMotionText').innerHTML = 'No Detect <span class="status-tag tag-off">NO MOTION</span>';
           }
 
           // GPS Status
@@ -497,12 +580,12 @@
             document.getElementById('valGps').style.color = "#0284c7";
             document.getElementById('valGps').href = `https://www.google.com/maps?q=${latVal},${lngVal}`;
           } else {
-            document.getElementById('valGps').innerText = "GPS No Signal";
+            document.getElementById('valGps').innerText = "GPS No Detect";
             document.getElementById('valGps').style.color = "#64748b";
             document.getElementById('valGps').href = "#";
           }
 
-          // Emergency Detection (Critical if body temp exceeds 100.4°F)
+          // Emergency Detection
           const isCritical = gasVal > 600 || accelVal > 2.5 || (bodyTempFahrenheit > 100.4) || (spo2Val > 0 && spo2Val < 92);
           const statusBanner = document.getElementById('statusBanner');
           const statusText = document.getElementById('statusText');
@@ -516,7 +599,7 @@
             if (!audioMuted) siren.play().catch(e => {});
 
             if (!lastCriticalState) {
-              triggerPopup("EMERGENCY ALERT", "Hazardous condition or high fever detected on live sensors!", "fa-triangle-exclamation", "#ef4444");
+              triggerPopup("EMERGENCY ALERT", "Hazardous condition detected on live sensors!", "fa-triangle-exclamation", "#ef4444");
               lastCriticalState = true;
             }
           } else {
