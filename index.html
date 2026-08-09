@@ -210,9 +210,9 @@
     <!-- SCREEN 2 -->
     <div class="screen-view" id="screen2">
       <form onsubmit="event.preventDefault(); saveWorkerRegistration();">
-        <div class="form-group bg-blue"><label>Worker name</label><input type="text" id="wName" value="Sakib" required></div>
-        <div class="form-group bg-orange"><label>Age</label><input type="number" id="wAge" value="23" required></div>
-        <div class="form-group bg-yellow"><label>Worker ID / License number</label><input type="text" id="wID" value="2346" required></div>
+        <div class="form-group bg-blue"><label>Worker name</label><input type="text" id="wName" value="user" required></div>
+        <div class="form-group bg-orange"><label>Age</label><input type="number" id="wAge" value="00" required></div>
+        <div class="form-group bg-yellow"><label>Worker ID / License number</label><input type="text" id="wID" value="1234" required></div>
         <div class="form-group bg-olive"><label>Construction site</label><input type="text" id="wSite" value="Khulna Site" required></div>
         <div class="form-group bg-light-blue"><label>Emergency contact</label><input type="text" id="wEmerg" value="+8801700000000" required></div>
         <div class="form-group bg-green"><label>Supervisor contact</label><input type="text" id="wSuper" value="+8801800000000" required></div>
@@ -240,8 +240,8 @@
         <div id="netStatusBadge" class="net-badge offline"><i class="fa-solid fa-circle" style="font-size:8px;"></i> <span id="netStatusText">OFFLINE</span></div>
         <div class="profile-title"><i class="fa-regular fa-user"></i> Worker Profile</div>
         <div class="profile-info">
-          <p><strong>Name:</strong> <span id="dispName">Sakib</span></p>
-          <p><strong>ID:</strong> <span id="dispID">2346</span></p>
+          <p><strong>Name:</strong> <span id="dispName">user</span></p>
+          <p><strong>ID:</strong> <span id="dispID">1234</span></p>
           <p><strong>Site:</strong> <span id="dispSite">Khulna Site</span></p>
           <p><strong>Emergency:</strong> <span id="dispEmerg">+8801700000000</span></p>
         </div>
@@ -283,7 +283,7 @@
               <span id="valBodyTemp">0</span>°F
               <span id="tagBodyTemp" class="status-tag tag-off">OFFLINE</span>
             </span>
-            <span class="safe-range-text">Safe Default: 95.0°F - 100.4°F (35.0°C - 38.0°C)</span>
+            <span class="safe-range-text">Safe Default: 95.0°F - 102.4°F (35.0°C - 38.8°C)</span>
           </div>
         </div>
 
@@ -296,7 +296,7 @@
               <span id="valEnvTemp">0</span>°C
               <span id="tagEnvTemp" class="status-tag tag-off">OFFLINE</span>
             </span>
-            <span class="safe-range-text">Safe Default: 10.0°C - 32.2°C (OSHA)</span>
+            <span class="safe-range-text">Safe Default: 10.0°C - 45.0°C </span>
           </div>
         </div>
 
@@ -309,7 +309,7 @@
               <span id="valGas">0</span> <small style="font-size:12px; font-weight:normal;">ppm</small>
               <span id="tagGas" class="status-tag tag-off">OFFLINE</span>
             </span>
-            <span class="safe-range-text">Safe Default: &lt; 50 ppm (OSHA PEL)</span>
+            <span class="safe-range-text">Safe Default: &lt; 300 ppm </span>
           </div>
         </div>
 
