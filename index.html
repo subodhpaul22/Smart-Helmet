@@ -6,7 +6,7 @@
   <title>Smart Helmet - Industrial Safety Command Center</title>
   
   <!-- Google Fonts & FontAwesome Icons -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Firebase JS SDK (v8) -->
@@ -14,455 +14,516 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <style>
-    :root {
-      --bg-dark: #0b0f19;
-      --panel-bg: #151c2c;
-      --accent-blue: #38bdf8;
-      --accent-green: #22c55e;
-      --accent-red: #ef4444;
-      --text-main: #f8fafc;
-      --text-sub: #94a3b8;
-      --border-color: #1e293b;
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: #cbd5e1; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 15px; }
+
+    /* Main Container */
+    .app-container {
+      width: 100%; max-width: 440px; background: #ffffff; min-height: 750px;
+      border-radius: 20px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+      position: relative; display: flex; flex-direction: column;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: var(--text-main); padding: 24px; min-height: 100vh; }
-
-    /* Worker Profile Modal Overlay */
-    .login-modal-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(11, 15, 25, 0.92); backdrop-filter: blur(8px);
-      display: flex; align-items: center; justify-content: center; z-index: 9999;
-      transition: all 0.3s ease;
+    /* Top Header */
+    .app-header {
+      background-color: #00897b; color: white; padding: 18px; text-align: center;
+      font-size: 20px; font-weight: 700; letter-spacing: 0.5px; position: relative;
     }
-    .login-box {
-      background: var(--panel-bg); border: 1px solid var(--border-color);
-      border-radius: 20px; padding: 32px; width: 100%; max-width: 440px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.6); text-align: center;
-    }
-    .login-box h2 { font-size: 22px; color: var(--accent-blue); margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-    .login-box p { font-size: 13px; color: var(--text-sub); margin-bottom: 24px; }
-    .input-group { text-align: left; margin-bottom: 16px; }
-    .input-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; text-transform: uppercase; }
-    .input-group input {
-      width: 100%; padding: 12px 16px; background: #0b0f19; border: 1px solid var(--border-color);
-      border-radius: 10px; color: var(--text-main); font-size: 14px; outline: none; transition: 0.3s;
-    }
-    .input-group input:focus { border-color: var(--accent-blue); box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
-    .btn-login {
-      width: 100%; padding: 14px; background: linear-gradient(135deg, #0284c7, #38bdf8);
-      border: none; border-radius: 10px; color: white; font-weight: 700; font-size: 15px;
-      cursor: pointer; margin-top: 10px; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3); transition: 0.3s;
-    }
-    .btn-login:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4); }
-
-    /* Top Navigation Bar */
-    .navbar {
-      background: var(--panel-bg); border: 1px solid var(--border-color);
-      border-radius: 16px; padding: 16px 24px; display: flex;
-      justify-content: space-between; align-items: center;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); margin-bottom: 24px;
-    }
-    .user-profile { display: flex; align-items: center; gap: 16px; }
-    .avatar-box {
-      width: 50px; height: 50px; background: #2563eb22; border: 2px solid var(--accent-blue);
-      border-radius: 12px; display: flex; align-items: center; justify-content: center;
-      font-size: 20px; color: var(--accent-blue);
-    }
-    .user-details h1 { font-size: 20px; font-weight: 700; color: var(--text-main); }
-    .user-details p { font-size: 13px; color: var(--text-sub); margin-top: 2px; }
-    .badge-id { background: #334155; color: var(--accent-blue); padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; }
-
-    .nav-controls { display: flex; align-items: center; gap: 12px; }
-    .gps-btn {
-      background: #475569; color: white; border: none; padding: 12px 20px; border-radius: 10px;
-      font-weight: 600; font-size: 14px; text-decoration: none; display: flex;
-      align-items: center; gap: 8px; transition: all 0.3s ease;
-    }
-    .switch-btn {
-      background: #334155; color: var(--text-main); border: none; padding: 12px 16px;
-      border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px;
-      transition: all 0.3s ease;
-    }
-    .switch-btn:hover { background: #475569; }
-    .audio-btn {
-      background: #334155; color: var(--text-main); border: none; width: 44px; height: 44px;
-      border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px;
+    .nav-back-btn {
+      background: none; border: none; color: white; position: absolute;
+      left: 15px; top: 18px; font-size: 18px; cursor: pointer; display: none;
     }
 
-    /* System Status Banner */
+    /* Screen Views */
+    .screen-view { display: none; padding: 20px; flex: 1; flex-direction: column; overflow-y: auto; }
+    .screen-view.active { display: flex; }
+
+    /* Buttons */
+    .btn-purple {
+      background-color: #a855f7; color: white; border: none; padding: 16px;
+      border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer;
+      width: 100%; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s;
+    }
+    .btn-purple:hover { background-color: #9333ea; }
+
+    .btn-yellow {
+      background-color: #f59e0b; color: #0f172a; border: none; padding: 16px;
+      border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer;
+      width: 100%; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s;
+    }
+    .btn-yellow:hover { background-color: #d97706; }
+
+    /* Screen 1 */
+    #screen1 { justify-content: center; gap: 20px; }
+
+    /* Screen 2 Form */
+    .form-group { margin-bottom: 12px; padding: 10px 14px; border-radius: 8px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+    .form-group input {
+      width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;
+      font-size: 14px; font-weight: 600; color: #0f172a; background: #ffffff; outline: none;
+    }
+
+    .bg-blue { background-color: #e0f2fe; }
+    .bg-orange { background-color: #ffedd5; }
+    .bg-yellow { background-color: #fef9c3; }
+    .bg-olive { background-color: #f0fdf4; }
+    .bg-light-blue { background-color: #e0f2fe; }
+    .bg-green { background-color: #dcfce7; }
+
+    /* Screen 3 Workers List */
+    #screen3 { gap: 16px; }
+    .registered-section-title {
+      font-size: 14px; font-weight: 700; color: #475569; margin-top: 5px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .workers-list { display: flex; flex-direction: column; gap: 12px; margin-top: 5px; }
+    .worker-card {
+      background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px;
+      padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .worker-card:hover { border-color: #a855f7; background: #f3e8ff; transform: translateY(-2px); }
+    .worker-card-info h4 { font-size: 15px; color: #0f172a; font-weight: 700; }
+    .worker-card-info p { font-size: 12px; color: #64748b; margin-top: 3px; }
+
+    /* Screen 4 Live Dashboard */
+    #screen4 { background-color: #f8fafc; gap: 10px; padding: 14px; }
+
     .status-banner {
-      padding: 16px 24px; border-radius: 12px; font-weight: 600; font-size: 15px;
-      display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; transition: all 0.4s ease;
+      padding: 10px 14px; border-radius: 8px; font-weight: 600; font-size: 12px;
+      display: flex; align-items: center; justify-content: space-between;
     }
-    .status-banner.normal-bg { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); color: var(--accent-green); }
-    .status-banner.alert-bg { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.5); color: var(--accent-red); animation: pulse-border 1.2s infinite; }
+    .status-banner.normal-bg { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .status-banner.alert-bg { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; animation: pulse-bg 1s infinite alternate; }
+    .status-banner.offline-bg { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 
-    /* Sensor Grid Layout */
-    .sensor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-
-    /* Sensor Card Styling */
-    .card {
-      background: var(--panel-bg); border: 1px solid var(--border-color);
-      border-radius: 16px; padding: 20px; position: relative; overflow: hidden; transition: all 0.3s ease;
-    }
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .card-title { font-size: 13px; font-weight: 600; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; }
-    .card-icon { font-size: 18px; color: var(--accent-blue); }
-
-    .value-box { margin-bottom: 16px; }
-    .live-val { font-size: 32px; font-weight: 700; color: var(--text-main); }
-    .unit { font-size: 16px; color: var(--text-sub); font-weight: 400; }
-
-    .comparison-box {
-      background: rgba(255, 255, 255, 0.03); border-radius: 8px; padding: 10px 12px;
-      display: flex; justify-content: space-between; align-items: center; font-size: 12px;
-    }
-    .normal-label { color: var(--text-sub); }
-    .normal-val { color: var(--accent-green); font-weight: 600; }
-
-    .tag-status { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; }
-    .tag-normal { background: rgba(34, 197, 94, 0.2); color: var(--accent-green); }
-    .tag-alert { background: rgba(239, 68, 68, 0.25); color: var(--accent-red); }
-
-    /* Alert Highlighting */
-    .card.is-abnormal {
-      border-color: var(--accent-red);
-      background: linear-gradient(180deg, rgba(239, 68, 68, 0.1) 0%, var(--panel-bg) 100%);
-      box-shadow: 0 0 20px rgba(239, 68, 68, 0.25);
-    }
-    .card.is-abnormal .live-val { color: var(--accent-red); }
-
-    @keyframes pulse-border {
-      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-      70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    @keyframes pulse-bg {
+      from { background-color: #fee2e2; }
+      to { background-color: #fca5a5; }
     }
 
-    .footer-bar { margin-top: 30px; text-align: center; color: var(--text-sub); font-size: 12px; }
+    .profile-card {
+      background: #ffffff; border-radius: 12px; padding: 12px 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04); position: relative; border: 1px solid #e2e8f0;
+    }
+    .profile-title { font-size: 14px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    
+    .net-badge {
+      position: absolute; top: 12px; right: 12px; font-size: 11px;
+      padding: 4px 10px; border-radius: 12px; font-weight: 700; display: flex;
+      align-items: center; gap: 5px; transition: 0.3s;
+    }
+    .net-badge.online { background: #10b981; color: white; }
+    .net-badge.offline { background: #ef4444; color: white; }
+
+    .profile-info p { font-size: 12px; color: #334155; margin-bottom: 2px; font-weight: 600; }
+
+    /* Metrics Grid */
+    .metrics-grid { display: flex; flex-direction: column; gap: 8px; }
+    .metric-card {
+      background: #ffffff; border-radius: 10px; padding: 10px 12px;
+      display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+      border: 1px solid #e2e8f0; transition: 0.3s;
+    }
+    
+    .metric-icon {
+      width: 36px; height: 36px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+    }
+    .metric-details { display: flex; flex-direction: column; flex: 1; }
+    .metric-label { font-size: 11px; font-weight: 600; color: #64748b; }
+    .metric-value { font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 1px; }
+
+    .icon-heart { background: #ffe4e6; color: #e11d48; }
+    .icon-temp { background: #fef3c7; color: #d97706; }
+    .icon-gas { background: #ffedd5; color: #ea580c; }
+    .icon-fall { background: #e0f2fe; color: #0284c7; }
+    .icon-gps { background: #dcfce7; color: #16a34a; }
+    .icon-floor { background: #f3e8ff; color: #9333ea; }
+    .icon-pressure { background: #e0e7ff; color: #4f46e5; }
+
+    /* Popup Modal */
+    .popup-overlay {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6); display: none; justify-content: center;
+      align-items: center; z-index: 100; padding: 20px;
+    }
+    .popup-overlay.active { display: flex; }
+    .popup-card {
+      background: white; border-radius: 16px; padding: 20px; text-align: center;
+      width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: popIn 0.3s ease;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .popup-icon { font-size: 40px; color: #ef4444; margin-bottom: 10px; }
+    .popup-title { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+    .popup-msg { font-size: 13px; color: #475569; margin-bottom: 16px; }
+    .popup-close-btn {
+      background: #0f172a; color: white; border: none; padding: 10px 20px;
+      border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%;
+    }
   </style>
 </head>
 <body>
 
-  <!-- Worker Credentials Input Modal -->
-  <div class="login-modal-overlay" id="loginModal">
-    <div class="login-box">
-      <h2><i class="fa-solid fa-hard-hat"></i> Helmet Dashboard</h2>
-      <p>Enter worker & building site credentials to connect</p>
-      
-      <form id="loginForm" onsubmit="event.preventDefault(); saveWorkerCredentials();">
-        <div class="input-group">
-          <label>Worker Full Name</label>
-          <input type="text" id="inputName" placeholder="e.g. Rahim Ahmed" value="Rahim Ahmed" required>
-        </div>
-        <div class="input-group">
-          <label>Worker ID Number</label>
-          <input type="text" id="inputID" placeholder="e.g. WORKER-104" value="WORKER-104" required>
-        </div>
-        <div class="input-group">
-          <label>Building Site / Zone</label>
-          <input type="text" id="inputSite" placeholder="e.g. Structural Zone A" value="Structural Zone A" required>
-        </div>
-        
-        <button type="button" onclick="saveWorkerCredentials()" class="btn-login">Access Live Dashboard</button>
+  <div class="app-container">
+    <button class="nav-back-btn" id="backBtn" onclick="goBack()"><i class="fa-solid fa-arrow-left"></i></button>
+    <div class="app-header" id="headerTitle">Smart Helmet</div>
+
+    <!-- Popup Modal -->
+    <div class="popup-overlay" id="popupOverlay">
+      <div class="popup-card">
+        <div class="popup-icon" id="popupIcon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="popup-title" id="popupTitle">Alert Title</div>
+        <div class="popup-msg" id="popupMsg">Alert Message Details</div>
+        <button class="popup-close-btn" onclick="closePopup()">DISMISS</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 1 -->
+    <div class="screen-view active" id="screen1">
+      <button class="btn-purple" onclick="showScreen('screen3')">LOG IN</button>
+      <button class="btn-yellow" onclick="showScreen('screen2')">REGISTRATION</button>
+    </div>
+
+    <!-- SCREEN 2 -->
+    <div class="screen-view" id="screen2">
+      <form onsubmit="event.preventDefault(); saveWorkerRegistration();">
+        <div class="form-group bg-blue"><label>Worker name</label><input type="text" id="wName" value="Sakib" required></div>
+        <div class="form-group bg-orange"><label>Age</label><input type="number" id="wAge" value="23" required></div>
+        <div class="form-group bg-yellow"><label>Worker ID / License number</label><input type="text" id="wID" value="2346" required></div>
+        <div class="form-group bg-olive"><label>Construction site</label><input type="text" id="wSite" value="Khulna Site" required></div>
+        <div class="form-group bg-light-blue"><label>Emergency contact</label><input type="text" id="wEmerg" value="+8801700000000" required></div>
+        <div class="form-group bg-green"><label>Supervisor contact</label><input type="text" id="wSuper" value="+8801800000000" required></div>
+        <button type="submit" class="btn-purple" style="margin-top: 10px;">SAVE REGISTRATION</button>
       </form>
     </div>
-  </div>
 
-  <!-- Navigation Header -->
-  <div class="navbar">
-    <div class="user-profile">
-      <div class="avatar-box"><i class="fa-solid fa-user-shield"></i></div>
-      <div class="user-details">
-        <h1><span id="wName">Rahim Ahmed</span> <span class="badge-id" id="wID">WORKER-104</span></h1>
-        <p><i class="fa-solid fa-building"></i> Site: <span id="wSite">Structural Zone A</span></p>
-      </div>
-    </div>
-    <div class="nav-controls">
-      <button class="switch-btn" onclick="openLoginModal()" title="Switch User or Site">
-        <i class="fa-solid fa-user-gear"></i> Switch Profile
-      </button>
-      <button class="audio-btn" id="audioToggle" onclick="toggleAudio()" title="Mute/Unmute Emergency Siren">
-        <i class="fa-solid fa-volume-high" id="audioIcon"></i>
-      </button>
-      <a id="gpsLink" href="#" target="_blank" class="gps-btn">
-        <i class="fa-solid fa-spinner fa-spin"></i> GPS Searching...
-      </a>
-    </div>
-  </div>
-
-  <!-- Global System Status Banner -->
-  <div id="statusBanner" class="status-banner normal-bg">
-    <div><i class="fa-solid fa-shield-halved" id="statusIcon"></i> <span id="statusText">SYSTEM STATUS: ALL PARAMETERS WITHIN SAFE LIMITS</span></div>
-    <div style="font-size: 12px; opacity: 0.8;">Last Sync: <span id="lastSync">--:--:--</span></div>
-  </div>
-
-  <!-- Sensor Grid Layout -->
-  <div class="sensor-grid">
-
-    <!-- 1. Floor Level & Pressure (BMP280) -->
-    <div class="card" id="cardFloor">
-      <div class="card-header">
-        <span class="card-title"><i class="fa-solid fa-layer-group card-icon"></i> Building Floor</span>
-        <span class="tag-status tag-normal" id="tagFloor">ACTIVE</span>
-      </div>
-      <div class="value-box">
-        <div class="live-val"><span id="floor">0</span> <span class="unit">Floor</span></div>
-      </div>
-      <div class="comparison-box">
-        <span class="normal-label">Air Pressure:</span>
-        <span class="normal-val"><span id="pressure">0</span> hPa</span>
-      </div>
+    <!-- SCREEN 3 -->
+    <div class="screen-view" id="screen3">
+      <div class="registered-section-title">Registered Workers (<span id="workerCount">0</span>)</div>
+      <p style="font-size: 12px; color: #64748b; margin-bottom: 10px;">লাইভ ড্যাশবোর্ড দেখতে ওয়ার্কারের উপর ক্লিক করুন:</p>
+      <div class="workers-list" id="registeredWorkersList"></div>
     </div>
 
-    <!-- 2. Environment Temp (BMP280) -->
-    <div class="card" id="cardEnvTemp">
-      <div class="card-header">
-        <span class="card-title"><i class="fa-solid fa-cloud-sun card-icon"></i> Environment Temp (BMP280)</span>
-        <span class="tag-status tag-normal" id="tagEnvTemp">NORMAL</span>
+    <!-- SCREEN 4 -->
+    <div class="screen-view" id="screen4">
+      <div id="statusBanner" class="status-banner offline-bg">
+        <div><i class="fa-solid fa-plug-circle-xmark" id="statusIcon"></i> <span id="statusText">WAITING FOR HARDWARE...</span></div>
+        <button id="audioToggle" onclick="toggleAudio()" style="background:none; border:none; cursor:pointer; color:inherit;">
+          <i class="fa-solid fa-volume-high" id="audioIcon"></i>
+        </button>
       </div>
-      <div class="value-box">
-        <div class="live-val"><span id="envTemp">0.0</span> <span class="unit">°C</span></div>
-      </div>
-      <div class="comparison-box">
-        <span class="normal-label">Ambient Limit:</span>
-        <span class="normal-val">&lt; 45.0°C</span>
-      </div>
-    </div>
 
-    <!-- 3. Body Temperature (DS18B20) -->
-    <div class="card" id="cardTemp">
-      <div class="card-header">
-        <span class="card-title"><i class="fa-solid fa-temperature-high card-icon"></i> Body Temperature</span>
-        <span class="tag-status tag-normal" id="tagTemp">NORMAL</span>
+      <div class="profile-card">
+        <div id="netStatusBadge" class="net-badge offline"><i class="fa-solid fa-circle" style="font-size:8px;"></i> <span id="netStatusText">OFFLINE</span></div>
+        <div class="profile-title"><i class="fa-regular fa-user"></i> Worker Profile</div>
+        <div class="profile-info">
+          <p><strong>Name:</strong> <span id="dispName">Sakib</span></p>
+          <p><strong>ID:</strong> <span id="dispID">2346</span></p>
+          <p><strong>Site:</strong> <span id="dispSite">Khulna Site</span></p>
+          <p><strong>Emergency:</strong> <span id="dispEmerg">+8801700000000</span></p>
+        </div>
       </div>
-      <div class="value-box">
-        <div class="live-val"><span id="temp">0.0</span> <span class="unit">°C</span></div>
-      </div>
-      <div class="comparison-box">
-        <span class="normal-label">Safe Range:</span>
-        <span class="normal-val">36.5°C - 37.8°C</span>
-      </div>
-    </div>
 
-    <!-- 4. Heart Rate & SpO2 (MAX30102) -->
-    <div class="card" id="cardPulse">
-      <div class="card-header">
-        <span class="card-title"><i class="fa-solid fa-heart-pulse card-icon"></i> Heart Rate & SpO2</span>
-        <span class="tag-status tag-normal" id="tagPulse">NORMAL</span>
-      </div>
-      <div class="value-box">
-        <div class="live-val"><span id="hr">0</span> <span class="unit">BPM</span> | <span id="spo2">0</span> <span class="unit">%</span></div>
-      </div>
-      <div class="comparison-box">
-        <span class="normal-label">Standard:</span>
-        <span class="normal-val">60-100 BPM | &gt;95% SpO2</span>
-      </div>
-    </div>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon icon-floor"><i class="fa-solid fa-building"></i></div>
+          <div class="metric-details"><span class="metric-label">Floor Level</span><span class="metric-value"><span id="valFloor">0</span> <small style="font-size:12px; font-weight:normal;">Floor</small></span></div>
+        </div>
 
-    <!-- 5. Air Quality & Toxic Gas (MQ-2) -->
-    <div class="card" id="cardGas">
-      <div class="card-header">
-        <span class="card-title"><i class="fa-solid fa-wind card-icon"></i> Gas Level (MQ-2)</span>
-        <span class="tag-status tag-normal" id="tagGas">SAFE</span>
-      </div>
-      <div class="value-box">
-        <div class="live-val"><span id="gas">0</span> <span class="unit">PPM</span></div>
-      </div>
-      <div class="comparison-box">
-        <span class="normal-label">Safe Threshold:</span>
-        <span class="normal-val">&lt; 600 PPM</span>
-      </div>
-    </div>
+        <div class="metric-card">
+          <div class="metric-icon icon-pressure"><i class="fa-solid fa-gauge-high"></i></div>
+          <div class="metric-details"><span class="metric-label">Air Pressure</span><span class="metric-value"><span id="valPressure">0</span> <small style="font-size:12px; font-weight:normal;">hPa</small></span></div>
+        </div>
 
-    <!-- 6. Fall & Impact Detection (MPU6050) -->
-    <div class="card" id="cardMotion">
-      <div class="card-header">
-        <span class="card-title"><i class="fa-solid fa-person-falling card-icon"></i> Impact / Fall (G-Force)</span>
-        <span class="tag-status tag-normal" id="tagMotion">STABLE</span>
-      </div>
-      <div class="value-box">
-        <div class="live-val"><span id="accel">0.0</span> <span class="unit">G</span></div>
-      </div>
-      <div class="comparison-box">
-        <span class="normal-label">Normal Motion:</span>
-        <span class="normal-val">0.8G - 1.2G</span>
+        <div class="metric-card">
+          <div class="metric-icon icon-heart"><i class="fa-solid fa-heart-pulse"></i></div>
+          <div class="metric-details"><span class="metric-label">Heart Rate (HR) & SpO₂</span><span class="metric-value"><span id="valHeart">0</span> <small style="font-size:12px; font-weight:normal;">bpm</small> | <span id="valSpo2">0</span><small style="font-size:12px; font-weight:normal;">%</small></span></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon icon-temp"><i class="fa-solid fa-temperature-high"></i></div>
+          <div class="metric-details"><span class="metric-label">Body & Env Temp</span><span class="metric-value">Body: <span id="valBodyTemp">0</span>°C | Env: <span id="valEnvTemp">0</span>°C</span></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon icon-gas"><i class="fa-solid fa-fire"></i></div>
+          <div class="metric-details"><span class="metric-label">Gas Level (MQ-2)</span><span class="metric-value"><span id="valGas">0</span> <small style="font-size:12px; font-weight:normal;">ppm</small></span></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon icon-fall"><i class="fa-solid fa-person-falling"></i></div>
+          <div class="metric-details"><span class="metric-label">Motion / Fall (<span id="valAccel">0.0</span>G)</span><span class="metric-value" id="valMotionText">Offline <small style="font-size:12px; color:#64748b;">No Signal</small></span></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon icon-gps"><i class="fa-solid fa-location-dot"></i></div>
+          <div class="metric-details"><span class="metric-label">GPS Location</span><a id="valGps" href="#" target="_blank" style="font-size:13px; font-weight:700; color:#64748b; text-decoration:none;">GPS Offline</a></div>
+        </div>
       </div>
     </div>
 
   </div>
 
-  <div class="footer-bar">
-    <p>Smart Building Worker Safety Helmet System &copy; 2026 | Powered by ESP32 & Firebase Realtime Database</p>
-  </div>
-
-  <!-- Alarm Siren Audio Source -->
   <audio id="sirenSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" loop preload="auto"></audio>
 
   <script>
-    // --- Firebase Initialization with Safety Check ---
-    const firebaseConfig = {
-      databaseURL: "https://spry-smithy-461617-f5-default-rtdb.firebaseio.com/"
-    };
-    
-    let db = null;
-    try {
-      if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-        db = firebase.database();
-      }
-    } catch (err) {
-      console.warn("Firebase Init Warning:", err);
-    }
-
+    let screenHistory = ['screen1'];
+    let activeWorker = null;
     let audioMuted = false;
+    let lastCriticalState = false;
+    let deviceWatchdogTimer = null; // Watchdog timer to detect hardware disconnect
+
     const siren = document.getElementById('sirenSound');
 
-    // --- Window Load & Storage Initializer ---
-    window.onload = function() {
-      const savedName = localStorage.getItem('helmet_worker_name');
-      const savedID = localStorage.getItem('helmet_worker_id');
-      const savedSite = localStorage.getItem('helmet_site_name');
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen-view').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
 
-      if (savedName && savedID && savedSite) {
-        document.getElementById('wName').innerText = savedName;
-        document.getElementById('wID').innerText = savedID;
-        document.getElementById('wSite').innerText = savedSite;
-        document.getElementById('loginModal').style.display = 'none';
-      } else {
-        document.getElementById('loginModal').style.display = 'flex';
-      }
-    };
+      const headerTitle = document.getElementById('headerTitle');
+      const backBtn = document.getElementById('backBtn');
 
-    function saveWorkerCredentials() {
-      const name = document.getElementById('inputName').value.trim();
-      const id = document.getElementById('inputID').value.trim();
-      const site = document.getElementById('inputSite').value.trim();
+      headerTitle.innerText = screenId === 'screen4' ? "Smart Helmet Dashboard" : "Smart Helmet";
+      backBtn.style.display = screenId !== 'screen1' ? 'block' : 'none';
 
-      if (name && id && site) {
-        localStorage.setItem('helmet_worker_name', name);
-        localStorage.setItem('helmet_worker_id', id);
-        localStorage.setItem('helmet_site_name', site);
+      if(screenId === 'screen3') renderWorkersList();
+      screenHistory.push(screenId);
+    }
 
-        document.getElementById('wName').innerText = name;
-        document.getElementById('wID').innerText = id;
-        document.getElementById('wSite').innerText = site;
+    function goBack() {
+      if (screenHistory.length > 1) {
+        screenHistory.pop();
+        const prevScreen = screenHistory[screenHistory.length - 1];
+        document.querySelectorAll('.screen-view').forEach(s => s.classList.remove('active'));
+        document.getElementById(prevScreen).classList.add('active');
 
-        document.getElementById('loginModal').style.display = 'none';
-      } else {
-        alert("Please complete all three input fields.");
+        document.getElementById('headerTitle').innerText = prevScreen === 'screen4' ? "Smart Helmet Dashboard" : "Smart Helmet";
+        document.getElementById('backBtn').style.display = prevScreen !== 'screen1' ? 'block' : 'none';
+
+        if (prevScreen === 'screen3') renderWorkersList();
       }
     }
 
-    function openLoginModal() {
-      document.getElementById('loginModal').style.display = 'flex';
+    function getRegisteredWorkers() {
+      const saved = localStorage.getItem('registered_workers_v3');
+      return saved ? JSON.parse(saved) : [{ name: "Sakib", age: "23", id: "2346", site: "Khulna Site", emerg: "+8801700000000", super: "+8801800000000" }];
+    }
+
+    function saveWorkerRegistration() {
+      const name = document.getElementById('wName').value.trim();
+      const age = document.getElementById('wAge').value.trim();
+      const id = document.getElementById('wID').value.trim();
+      const site = document.getElementById('wSite').value.trim();
+      const emerg = document.getElementById('wEmerg').value.trim();
+      const superNum = document.getElementById('wSuper').value.trim();
+
+      if (name && id) {
+        const workers = getRegisteredWorkers();
+        const existingIdx = workers.findIndex(w => w.id === id);
+        const newWorker = { name, age, id, site, emerg, super: superNum };
+
+        if (existingIdx >= 0) workers[existingIdx] = newWorker;
+        else workers.push(newWorker);
+
+        localStorage.setItem('registered_workers_v3', JSON.stringify(workers));
+        activeWorker = newWorker;
+        showScreen('screen3');
+      } else {
+        alert("Please complete Name and ID fields.");
+      }
+    }
+
+    function renderWorkersList() {
+      const workers = getRegisteredWorkers();
+      document.getElementById('workerCount').innerText = workers.length;
+      if (!activeWorker && workers.length > 0) activeWorker = workers[0];
+
+      document.getElementById('registeredWorkersList').innerHTML = workers.map(w => `
+        <div class="worker-card" onclick="selectWorkerAndOpenDashboard('${w.id}')">
+          <div class="worker-card-info">
+            <h4>${w.name}</h4>
+            <p>ID: ${w.id} | Site: ${w.site}</p>
+          </div>
+          <i class="fa-solid fa-chevron-right" style="color: #a855f7;"></i>
+        </div>
+      `).join('');
+    }
+
+    function selectWorkerAndOpenDashboard(id) {
+      const workers = getRegisteredWorkers();
+      const found = workers.find(w => w.id === id);
+      if (found) {
+        activeWorker = found;
+        document.getElementById('dispName').innerText = found.name;
+        document.getElementById('dispID').innerText = found.id;
+        document.getElementById('dispSite').innerText = found.site;
+        document.getElementById('dispEmerg').innerText = found.emerg;
+        showScreen('screen4');
+      }
     }
 
     function toggleAudio() {
       audioMuted = !audioMuted;
-      const icon = document.getElementById('audioIcon');
-      if (audioMuted) {
-        icon.className = "fa-solid fa-volume-xmark";
-        siren.pause();
-      } else {
-        icon.className = "fa-solid fa-volume-high";
-      }
+      document.getElementById('audioIcon').className = audioMuted ? "fa-solid fa-volume-xmark" : "fa-solid fa-volume-high";
+      if (audioMuted) siren.pause();
     }
 
-    function safeNum(val, defaultVal = 0) {
+    function triggerPopup(title, message, iconClass = "fa-triangle-exclamation", iconColor = "#ef4444") {
+      document.getElementById('popupTitle').innerText = title;
+      document.getElementById('popupMsg').innerText = message;
+      const iconEl = document.getElementById('popupIcon');
+      iconEl.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
+      iconEl.style.color = iconColor;
+      document.getElementById('popupOverlay').classList.add('active');
+    }
+
+    function closePopup() {
+      document.getElementById('popupOverlay').classList.remove('active');
+    }
+
+    // Force Reset Dashboard UI when Hardware is Offline
+    function setHardwareOfflineState() {
+      document.getElementById('netStatusBadge').className = "net-badge offline";
+      document.getElementById('netStatusText').innerText = "OFFLINE";
+
+      document.getElementById('valFloor').innerText = "0";
+      document.getElementById('valPressure').innerText = "0";
+      document.getElementById('valHeart').innerText = "0";
+      document.getElementById('valSpo2').innerText = "0";
+      document.getElementById('valBodyTemp').innerText = "0";
+      document.getElementById('valEnvTemp').innerText = "0";
+      document.getElementById('valGas').innerText = "0";
+      document.getElementById('valAccel').innerText = "0.0";
+      document.getElementById('valMotionText').innerHTML = 'Offline <small style="font-size:12px; color:#64748b;">No Signal</small>';
+      document.getElementById('valGps').innerText = "GPS Offline";
+      document.getElementById('valGps').style.color = "#64748b";
+      document.getElementById('valGps').href = "#";
+
+      const statusBanner = document.getElementById('statusBanner');
+      statusBanner.className = "status-banner offline-bg";
+      document.getElementById('statusText').innerText = "HARDWARE OFFLINE (NO LIVE SIGNAL)";
+      document.getElementById('statusIcon').className = "fa-solid fa-plug-circle-xmark";
+      
+      siren.pause();
+      siren.currentTime = 0;
+      lastCriticalState = false;
+    }
+
+    function setHardwareOnlineState() {
+      document.getElementById('netStatusBadge').className = "net-badge online";
+      document.getElementById('netStatusText').innerText = "ONLINE";
+    }
+
+    function safeNum(val) {
       const n = parseFloat(val);
-      return isNaN(n) ? defaultVal : n;
+      return isNaN(n) ? 0 : n;
     }
 
-    // --- Live Firebase Listener ---
-    if (db) {
-      db.ref('/SmartHelmet').on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (!data) return;
+    window.onload = function() {
+      const workers = getRegisteredWorkers();
+      if(workers.length > 0) activeWorker = workers[0];
+      setHardwareOfflineState();
+    };
 
-        const floorVal = safeNum(data.floor, 0);
-        const pressureVal = safeNum(data.pressure, 0);
-        
-        // Comprehensive fallback for BMP280 temperature key names from ESP32
-        const envTempVal = safeNum(data.envTemp ?? data.bmpTemp ?? data.bmp280Temp ?? data.temperature, 0);
-        
-        const bodyTempVal = safeNum(data.bodyTemp, 0);
-        const heartRateVal = safeNum(data.heartRate, 0);
-        const spo2Val = safeNum(data.spo2, 0);
-        const gasVal = safeNum(data.gas, 0);
-        const accelVal = safeNum(data.accel, 0);
-        const latVal = safeNum(data.lat, 0);
-        const lngVal = safeNum(data.lng, 0);
+    // Firebase Integration
+    const firebaseConfig = {
+      databaseURL: "https://spry-smithy-461617-f5-default-rtdb.firebaseio.com/"
+    };
+    
+    try {
+      if (typeof firebase !== 'undefined') {
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        document.getElementById('floor').innerText = floorVal;
-        document.getElementById('pressure').innerText = pressureVal;
-        document.getElementById('envTemp').innerText = envTempVal.toFixed(1);
-        document.getElementById('temp').innerText = bodyTempVal.toFixed(1);
-        document.getElementById('hr').innerText = heartRateVal;
-        document.getElementById('spo2').innerText = spo2Val;
-        document.getElementById('gas').innerText = gasVal;
-        document.getElementById('accel').innerText = accelVal.toFixed(2);
+        // Listen for Realtime Sensor Data
+        db.ref('/SmartHelmet').on('value', (snapshot) => {
+          const data = snapshot.val();
+          if (!data) {
+            setHardwareOfflineState();
+            return;
+          }
 
-        const now = new Date();
-        document.getElementById('lastSync').innerText = now.toLocaleTimeString();
+          // Reset Watchdog Timer (If no new payload arrives in 10 seconds, mark OFFLINE)
+          clearTimeout(deviceWatchdogTimer);
+          deviceWatchdogTimer = setTimeout(() => {
+            setHardwareOfflineState();
+          }, 10000); // 10 sec timeout
 
-        const gpsBtn = document.getElementById('gpsLink');
-        if (latVal !== 0 && lngVal !== 0) {
-          gpsBtn.href = `https://www.google.com/maps?q=${latVal},${lngVal}`;
-          gpsBtn.innerHTML = `<i class="fa-solid fa-location-dot"></i> Live GPS Map`;
-          gpsBtn.style.background = "linear-gradient(135deg, #16a34a, #22c55e)";
-        } else {
-          gpsBtn.href = "#";
-          gpsBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> GPS Searching...`;
-          gpsBtn.style.background = "#475569";
-        }
+          // Mark Hardware ONLINE as valid data was received
+          setHardwareOnlineState();
 
-        const isEnvTempAbnormal = envTempVal > 45.0;
-        const isBodyTempAbnormal = bodyTempVal > 38.0 || (bodyTempVal < 35.0 && bodyTempVal > 0);
-        const isGasAbnormal = gasVal > 600;
-        const isImpactAbnormal = accelVal > 2.5;
-        const isPulseAbnormal = (spo2Val > 0 && spo2Val < 92) || heartRateVal > 120;
+          const floorVal = safeNum(data.floor);
+          const pressureVal = safeNum(data.pressure);
+          const heartRateVal = safeNum(data.heartRate);
+          const spo2Val = safeNum(data.spo2);
+          const bodyTempVal = safeNum(data.bodyTemp);
+          const envTempVal = safeNum(data.envTemp ?? data.temperature);
+          const gasVal = safeNum(data.gas);
+          const accelVal = safeNum(data.accel);
+          const latVal = safeNum(data.lat);
+          const lngVal = safeNum(data.lng);
 
-        updateCardState('cardEnvTemp', 'tagEnvTemp', isEnvTempAbnormal, "HIGH HEAT");
-        updateCardState('cardTemp', 'tagTemp', isBodyTempAbnormal, "HIGH TEMP");
-        updateCardState('cardGas', 'tagGas', isGasAbnormal, "HIGH GAS");
-        updateCardState('cardMotion', 'tagMotion', isImpactAbnormal, "FALL DETECTED");
-        updateCardState('cardPulse', 'tagPulse', isPulseAbnormal, "ABNORMAL");
+          // Update UI Values
+          document.getElementById('valFloor').innerText = floorVal;
+          document.getElementById('valPressure').innerText = pressureVal;
+          document.getElementById('valHeart').innerText = heartRateVal;
+          document.getElementById('valSpo2').innerText = spo2Val;
+          document.getElementById('valBodyTemp').innerText = bodyTempVal.toFixed(1);
+          document.getElementById('valEnvTemp').innerText = envTempVal.toFixed(1);
+          document.getElementById('valGas').innerText = gasVal;
+          document.getElementById('valAccel').innerText = accelVal.toFixed(1);
 
-        const hasEmergency = isEnvTempAbnormal || isBodyTempAbnormal || isGasAbnormal || isImpactAbnormal || isPulseAbnormal || Boolean(data.alert);
+          // Motion Status
+          if (accelVal > 2.5) {
+            document.getElementById('valMotionText').innerHTML = 'Fall <small style="font-size:12px; color:#ef4444; font-weight:bold;">Detected!</small>';
+          } else {
+            document.getElementById('valMotionText').innerHTML = 'Normal <small style="font-size:12px; color:#16a34a;">Safe</small>';
+          }
 
-        const statusBanner = document.getElementById('statusBanner');
-        const statusText = document.getElementById('statusText');
-        const statusIcon = document.getElementById('statusIcon');
+          // GPS Status
+          if (latVal !== 0 && lngVal !== 0) {
+            document.getElementById('valGps').innerText = "Open Live GPS Map";
+            document.getElementById('valGps').style.color = "#0284c7";
+            document.getElementById('valGps').href = `https://www.google.com/maps?q=${latVal},${lngVal}`;
+          } else {
+            document.getElementById('valGps').innerText = "GPS No Signal";
+            document.getElementById('valGps').style.color = "#64748b";
+            document.getElementById('valGps').href = "#";
+          }
 
-        if (hasEmergency) {
-          statusBanner.className = "status-banner alert-bg";
-          statusText.innerText = "CRITICAL ALERT: ABNORMAL CONDITIONS DETECTED AT SITE!";
-          statusIcon.className = "fa-solid fa-triangle-exclamation";
-          if (!audioMuted) siren.play().catch(e => {});
-        } else {
-          statusBanner.className = "status-banner normal-bg";
-          statusText.innerText = "SYSTEM STATUS: ALL PARAMETERS WITHIN SAFE LIMITS";
-          statusIcon.className = "fa-solid fa-shield-halved";
-          siren.pause();
-          siren.currentTime = 0;
-        }
-      });
-    }
+          // Emergency Detection
+          const isCritical = gasVal > 600 || accelVal > 2.5 || (bodyTempVal > 38.0) || (spo2Val > 0 && spo2Val < 92);
+          const statusBanner = document.getElementById('statusBanner');
+          const statusText = document.getElementById('statusText');
+          const statusIcon = document.getElementById('statusIcon');
 
-    function updateCardState(cardId, tagId, isAbnormal, alertText) {
-      const card = document.getElementById(cardId);
-      const tag = document.getElementById(tagId);
+          if (isCritical) {
+            statusBanner.className = "status-banner alert-bg";
+            statusText.innerText = "CRITICAL ALERT DETECTED!";
+            statusIcon.className = "fa-solid fa-triangle-exclamation";
+            
+            if (!audioMuted) siren.play().catch(e => {});
 
-      if (isAbnormal) {
-        card.classList.add('is-abnormal');
-        tag.className = 'tag-status tag-alert';
-        tag.innerText = alertText;
-      } else {
-        card.classList.remove('is-abnormal');
-        tag.className = 'tag-status tag-normal';
-        tag.innerText = "NORMAL";
+            if (!lastCriticalState) {
+              triggerPopup("EMERGENCY ALERT", "Hazardous condition or fall detected on live sensors!", "fa-triangle-exclamation", "#ef4444");
+              lastCriticalState = true;
+            }
+          } else {
+            statusBanner.className = "status-banner normal-bg";
+            statusText.innerText = "SYSTEM SAFE";
+            statusIcon.className = "fa-solid fa-shield-halved";
+            siren.pause();
+            siren.currentTime = 0;
+            lastCriticalState = false;
+          }
+        });
       }
+    } catch(e) {
+      console.warn("Firebase Init Error:", e);
     }
   </script>
 </body>
