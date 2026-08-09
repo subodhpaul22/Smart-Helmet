@@ -343,308 +343,479 @@
   <audio id="sirenSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" loop preload="auto"></audio>
 
   <script>
-    let screenHistory = ['screen1'];
-    let activeWorker = null;
-    let audioMuted = false;
-    let lastCriticalState = false;
-    let deviceWatchdogTimer = null;
+   <!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Helmet - Industrial Safety Command Center</title>
+  
+  <!-- Google Fonts & FontAwesome Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Firebase JS SDK (v8) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-    const siren = document.getElementById('sirenSound');
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: #cbd5e1; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 15px; }
 
-    function showScreen(screenId) {
-      document.querySelectorAll('.screen-view').forEach(s => s.classList.remove('active'));
-      document.getElementById(screenId).classList.add('active');
-
-      const headerTitle = document.getElementById('headerTitle');
-      const backBtn = document.getElementById('backBtn');
-
-      headerTitle.innerText = screenId === 'screen4' ? "Smart Helmet Dashboard" : "Smart Helmet";
-      backBtn.style.display = screenId !== 'screen1' ? 'block' : 'none';
-
-      if(screenId === 'screen3') renderWorkersList();
-      screenHistory.push(screenId);
+    /* Main Container */
+    .app-container {
+      width: 100%; max-width: 440px; background: #ffffff; min-height: 750px;
+      border-radius: 20px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+      position: relative; display: flex; flex-direction: column;
     }
 
-    function goBack() {
-      if (screenHistory.length > 1) {
-        screenHistory.pop();
-        const prevScreen = screenHistory[screenHistory.length - 1];
-        document.querySelectorAll('.screen-view').forEach(s => s.classList.remove('active'));
-        document.getElementById(prevScreen).classList.add('active');
-
-        document.getElementById('headerTitle').innerText = prevScreen === 'screen4' ? "Smart Helmet Dashboard" : "Smart Helmet";
-        document.getElementById('backBtn').style.display = prevScreen !== 'screen1' ? 'block' : 'none';
-
-        if (prevScreen === 'screen3') renderWorkersList();
-      }
+    /* Top Header */
+    .app-header {
+      background-color: #00897b; color: white; padding: 18px; text-align: center;
+      font-size: 20px; font-weight: 700; letter-spacing: 0.5px; position: relative;
+    }
+    .nav-back-btn {
+      background: none; border: none; color: white; position: absolute;
+      left: 15px; top: 18px; font-size: 18px; cursor: pointer; display: none;
     }
 
-    function getRegisteredWorkers() {
-      const saved = localStorage.getItem('registered_workers_v3');
-      return saved ? JSON.parse(saved) : [{ name: "Sakib", age: "23", id: "2346", site: "Khulna Site", emerg: "+8801700000000", super: "+8801800000000" }];
+    /* Screen Views */
+    .screen-view { display: none; padding: 20px; flex: 1; flex-direction: column; overflow-y: auto; }
+    .screen-view.active { display: flex; }
+
+    /* Buttons */
+    .btn-purple {
+      background-color: #a855f7; color: white; border: none; padding: 16px;
+      border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer;
+      width: 100%; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s;
+    }
+    .btn-purple:hover { background-color: #9333ea; }
+
+    .btn-yellow {
+      background-color: #f59e0b; color: #0f172a; border: none; padding: 16px;
+      border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer;
+      width: 100%; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s;
+    }
+    .btn-yellow:hover { background-color: #d97706; }
+
+    /* Screen 1 */
+    #screen1 { justify-content: center; gap: 20px; }
+
+    /* Screen 2 Form */
+    .form-group { margin-bottom: 12px; padding: 10px 14px; border-radius: 8px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+    .form-group input {
+      width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;
+      font-size: 14px; font-weight: 600; color: #0f172a; background: #ffffff; outline: none;
     }
 
-    function saveWorkerRegistration() {
-      const name = document.getElementById('wName').value.trim();
-      const age = document.getElementById('wAge').value.trim();
-      const id = document.getElementById('wID').value.trim();
-      const site = document.getElementById('wSite').value.trim();
-      const emerg = document.getElementById('wEmerg').value.trim();
-      const superNum = document.getElementById('wSuper').value.trim();
+    .bg-blue { background-color: #e0f2fe; }
+    .bg-orange { background-color: #ffedd5; }
+    .bg-yellow { background-color: #fef9c3; }
+    .bg-olive { background-color: #f0fdf4; }
+    .bg-light-blue { background-color: #e0f2fe; }
+    .bg-green { background-color: #dcfce7; }
 
-      if (name && id) {
-        const workers = getRegisteredWorkers();
-        const existingIdx = workers.findIndex(w => w.id === id);
-        const newWorker = { name, age, id, site, emerg, super: superNum };
+    /* Screen 3 Workers List */
+    #screen3 { gap: 16px; }
+    .registered-section-title {
+      font-size: 14px; font-weight: 700; color: #475569; margin-top: 5px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .workers-list { display: flex; flex-direction: column; gap: 12px; margin-top: 5px; }
+    .worker-card {
+      background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px;
+      padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .worker-card:hover { border-color: #a855f7; background: #f3e8ff; transform: translateY(-2px); }
+    .worker-card-info h4 { font-size: 15px; color: #0f172a; font-weight: 700; }
+    .worker-card-info p { font-size: 12px; color: #64748b; margin-top: 3px; }
 
-        if (existingIdx >= 0) workers[existingIdx] = newWorker;
-        else workers.push(newWorker);
+    /* Screen 4 Live Dashboard */
+    #screen4 { background-color: #f8fafc; gap: 10px; padding: 14px; }
 
-        localStorage.setItem('registered_workers_v3', JSON.stringify(workers));
-        activeWorker = newWorker;
-        showScreen('screen3');
-      } else {
-        alert("Please complete Name and ID fields.");
-      }
+    .status-banner {
+      padding: 10px 14px; border-radius: 8px; font-weight: 600; font-size: 12px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .status-banner.normal-bg { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .status-banner.alert-bg { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; animation: pulse-bg 1s infinite alternate; }
+    .status-banner.offline-bg { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
+    @keyframes pulse-bg {
+      from { background-color: #fee2e2; }
+      to { background-color: #fca5a5; }
     }
 
-    function renderWorkersList() {
-      const workers = getRegisteredWorkers();
-      document.getElementById('workerCount').innerText = workers.length;
-      if (!activeWorker && workers.length > 0) activeWorker = workers[0];
-
-      document.getElementById('registeredWorkersList').innerHTML = workers.map(w => `
-        <div class="worker-card" onclick="selectWorkerAndOpenDashboard('${w.id}')">
-          <div class="worker-card-info">
-            <h4>${w.name}</h4>
-            <p>ID: ${w.id} | Site: ${w.site}</p>
-          </div>
-          <i class="fa-solid fa-chevron-right" style="color: #a855f7;"></i>
-        </div>
-      `).join('');
+    .profile-card {
+      background: #ffffff; border-radius: 12px; padding: 12px 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04); position: relative; border: 1px solid #e2e8f0;
     }
-
-    function selectWorkerAndOpenDashboard(id) {
-      const workers = getRegisteredWorkers();
-      const found = workers.find(w => w.id === id);
-      if (found) {
-        activeWorker = found;
-        document.getElementById('dispName').innerText = found.name;
-        document.getElementById('dispID').innerText = found.id;
-        document.getElementById('dispSite').innerText = found.site;
-        document.getElementById('dispEmerg').innerText = found.emerg;
-        showScreen('screen4');
-      }
-    }
-
-    function toggleAudio() {
-      audioMuted = !audioMuted;
-      document.getElementById('audioIcon').className = audioMuted ? "fa-solid fa-volume-xmark" : "fa-solid fa-volume-high";
-      if (audioMuted) siren.pause();
-    }
-
-    function triggerPopup(title, message, iconClass = "fa-triangle-exclamation", iconColor = "#ef4444") {
-      document.getElementById('popupTitle').innerText = title;
-      document.getElementById('popupMsg').innerText = message;
-      const iconEl = document.getElementById('popupIcon');
-      iconEl.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
-      iconEl.style.color = iconColor;
-      document.getElementById('popupOverlay').classList.add('active');
-    }
-
-    function closePopup() {
-      document.getElementById('popupOverlay').classList.remove('active');
-    }
-
-    // Force Reset Dashboard UI when Hardware is Offline
-    function setHardwareOfflineState() {
-      document.getElementById('netStatusBadge').className = "net-badge offline";
-      document.getElementById('netStatusText').innerText = "OFFLINE";
-
-      document.getElementById('valFloor').innerText = "0";
-      document.getElementById('valHeart').innerText = "0";
-      document.getElementById('valSpo2').innerText = "0";
-      document.getElementById('valBodyTemp').innerText = "0";
-      document.getElementById('valEnvTemp').innerText = "0";
-      document.getElementById('valGas').innerText = "0";
-      document.getElementById('valAccel').innerText = "0.0";
-      
-      // Tags Reset
-      ['tagHeart', 'tagBodyTemp', 'tagEnvTemp', 'tagGas', 'tagMotion'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) { el.innerText = "OFFLINE"; el.className = "status-tag tag-off"; }
-      });
-
-      document.getElementById('valGps').innerText = "GPS No Detect";
-      document.getElementById('valGps').style.color = "#64748b";
-      document.getElementById('valGps').href = "#";
-
-      const statusBanner = document.getElementById('statusBanner');
-      statusBanner.className = "status-banner offline-bg";
-      document.getElementById('statusText').innerText = "HARDWARE OFFLINE (NO LIVE SIGNAL)";
-      document.getElementById('statusIcon').className = "fa-solid fa-plug-circle-xmark";
-      
-      siren.pause();
-      siren.currentTime = 0;
-      lastCriticalState = false;
-    }
-
-    function setHardwareOnlineState() {
-      document.getElementById('netStatusBadge').className = "net-badge online";
-      document.getElementById('netStatusText').innerText = "ONLINE";
-    }
-
-    function safeNum(val) {
-      const n = parseFloat(val);
-      return isNaN(n) ? 0 : n;
-    }
-
-    // Helper to set tag state
-    function updateTag(tagId, statusText, statusType) {
-      const el = document.getElementById(tagId);
-      if(!el) return;
-      el.innerText = statusText;
-      el.className = `status-tag tag-${statusType}`; // normal, high, low, off
-    }
-
-    window.onload = function() {
-      const workers = getRegisteredWorkers();
-      if(workers.length > 0) activeWorker = workers[0];
-      setHardwareOfflineState();
-    };
-
-    // Firebase Integration
-    const firebaseConfig = {
-      databaseURL: "https://spry-smithy-461617-f5-default-rtdb.firebaseio.com/"
-    };
+    .profile-title { font-size: 14px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
     
-    try {
-      if (typeof firebase !== 'undefined') {
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+    .net-badge {
+      position: absolute; top: 12px; right: 12px; font-size: 11px;
+      padding: 4px 10px; border-radius: 12px; font-weight: 700; display: flex;
+      align-items: center; gap: 5px; transition: 0.3s;
+    }
+    .net-badge.online { background: #10b981; color: white; }
+    .net-badge.offline { background: #ef4444; color: white; }
 
-        // Listen for Realtime Sensor Data
-        db.ref('/SmartHelmet').on('value', (snapshot) => {
-          const data = snapshot.val();
-          if (!data) {
-            setHardwareOfflineState();
-            return;
-          }
+    .profile-info p { font-size: 12px; color: #334155; margin-bottom: 2px; font-weight: 600; }
 
-          // Reset Watchdog Timer
-          clearTimeout(deviceWatchdogTimer);
-          deviceWatchdogTimer = setTimeout(() => {
-            setHardwareOfflineState();
-          }, 10000);
+    /* Metrics Grid */
+    .metrics-grid { display: flex; flex-direction: column; gap: 8px; }
+    .metric-card {
+      border-radius: 10px; padding: 10px 12px;
+      display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+      border: 1px solid #e2e8f0; transition: 0.3s;
+    }
+    
+    /* Distinct Light Backgrounds for Each Card */
+    .card-floor { background-color: #fbfbfe; }
+    .card-heart { background-color: #fff5f7; }
+    .card-bodytemp { background-color: #fff1f2; }
+    .card-envtemp { background-color: #fffbe6; }
+    .card-gas { background-color: #fff7ed; }
+    .card-fall { background-color: #f0f9ff; }
+    .card-gps { background-color: #f0fdf4; }
 
-          setHardwareOnlineState();
+    .metric-icon {
+      width: 38px; height: 38px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;
+    }
+    .metric-details { display: flex; flex-direction: column; flex: 1; }
+    .metric-label { font-size: 11px; font-weight: 600; color: #64748b; }
+    .metric-value { font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 1px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 
-          const floorVal = safeNum(data.floor);
-          const heartRateVal = safeNum(data.heartRate);
-          const spo2Val = safeNum(data.spo2);
-          
-          let rawBodyTemp = safeNum(data.bodyTemp);
-          let bodyTempFahrenheit = rawBodyTemp > 0 ? (rawBodyTemp < 60 ? (rawBodyTemp * 1.8 + 32) : rawBodyTemp) : 0;
+    /* Safe Value & Highlight Badges */
+    .safe-range-text { font-size: 10px; color: #64748b; margin-top: 3px; font-weight: 600; }
+    .status-tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+    .tag-normal { background: #dcfce7; color: #15803d; }
+    .tag-high { background: #fee2e2; color: #b91c1c; }
+    .tag-low { background: #fef3c7; color: #b45309; }
+    .tag-off { background: #f1f5f9; color: #64748b; }
 
-          const envTempVal = safeNum(data.envTemp ?? data.temperature);
-          const gasVal = safeNum(data.gas);
-          const accelVal = safeNum(data.accel);
-          const latVal = safeNum(data.lat);
-          const lngVal = safeNum(data.lng);
+    /* Icon Themes */
+    .icon-floor { background: #f3e8ff; color: #9333ea; }
+    .icon-heart { background: #fce7f3; color: #db2777; }
+    .icon-bodytemp { background: #ffe4e6; color: #e11d48; }
+    .icon-envtemp { background: #fef3c7; color: #d97706; }
+    .icon-gas { background: #ffedd5; color: #ea580c; }
+    .icon-fall { background: #e0f2fe; color: #0284c7; }
+    .icon-gps { background: #dcfce7; color: #16a34a; }
 
-          // Update UI Numerical Values
-          document.getElementById('valFloor').innerText = floorVal;
-          document.getElementById('valHeart').innerText = heartRateVal;
-          document.getElementById('valSpo2').innerText = spo2Val;
-          document.getElementById('valBodyTemp').innerText = bodyTempFahrenheit.toFixed(1);
-          document.getElementById('valEnvTemp').innerText = envTempVal.toFixed(1);
-          document.getElementById('valGas').innerText = gasVal;
-          document.getElementById('valAccel').innerText = accelVal.toFixed(1);
+    /* Popup Modal */
+    .popup-overlay {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6); display: none; justify-content: center;
+      align-items: center; z-index: 100; padding: 20px;
+    }
+    .popup-overlay.active { display: flex; }
+    .popup-card {
+      background: white; border-radius: 16px; padding: 20px; text-align: center;
+      width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: popIn 0.3s ease;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .popup-icon { font-size: 40px; color: #ef4444; margin-bottom: 10px; }
+    .popup-title { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+    .popup-msg { font-size: 13px; color: #475569; margin-bottom: 16px; }
+    .popup-close-btn {
+      background: #0f172a; color: white; border: none; padding: 10px 20px;
+      border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%;
+    }
+  </style>
+</head>
+<body>
 
-          // --- Dynamic Status Tag Highlights ---
+  <div class="app-container">
+    <button class="nav-back-btn" id="backBtn" onclick="goBack()"><i class="fa-solid fa-arrow-left"></i></button>
+    <div class="app-header" id="headerTitle">Smart Helmet</div>
 
-          // Heart Rate & SpO2 Status (AHA / WHO Standards)
-          if (heartRateVal > 120 || (spo2Val > 0 && spo2Val <= 90)) {
-            updateTag('tagHeart', heartRateVal > 120 ? 'HIGH' : 'LOW', 'high');
-          } else if (heartRateVal < 50 && heartRateVal > 0) {
-            updateTag('tagHeart', 'LOW', 'low');
-          } else {
-            updateTag('tagHeart', 'NORMAL', 'normal');
-          }
+    <!-- Popup Modal -->
+    <div class="popup-overlay" id="popupOverlay">
+      <div class="popup-card">
+        <div class="popup-icon" id="popupIcon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="popup-title" id="popupTitle">Alert Title</div>
+        <div class="popup-msg" id="popupMsg">Alert Message Details</div>
+        <button class="popup-close-btn" onclick="closePopup()">DISMISS</button>
+      </div>
+    </div>
 
-          // Body Temperature Status (Medical Criteria: Fever > 100.4°F / Hypothermia < 95.0°F)
-          if (bodyTempFahrenheit > 100.4) {
-            updateTag('tagBodyTemp', 'HIGH', 'high');
-          } else if (bodyTempFahrenheit > 0 && bodyTempFahrenheit < 95.0) {
-            updateTag('tagBodyTemp', 'LOW', 'low');
-          } else {
-            updateTag('tagBodyTemp', 'NORMAL', 'normal');
-          }
+    <!-- SCREEN 1 -->
+    <div class="screen-view active" id="screen1">
+      <button class="btn-purple" onclick="showScreen('screen3')">LOG IN</button>
+      <button class="btn-yellow" onclick="showScreen('screen2')">REGISTRATION</button>
+    </div>
 
-          // Environmental Temperature Status (OSHA Workplace Limits: Cold < 10.0°C / Heat > 32.2°C)
-          if (envTempVal >= 32.2) {
-            updateTag('tagEnvTemp', 'HIGH', 'high');
-          } else if (envTempVal <= 10.0 && envTempVal > -50) {
-            updateTag('tagEnvTemp', 'LOW', 'low');
-          } else {
-            updateTag('tagEnvTemp', 'NORMAL', 'normal');
-          }
+    <!-- SCREEN 2 -->
+    <div class="screen-view" id="screen2">
+      <form onsubmit="event.preventDefault(); saveWorkerRegistration();">
+        <div class="form-group bg-blue"><label>Worker name</label><input type="text" id="wName" value="user" required></div>
+        <div class="form-group bg-orange"><label>Age</label><input type="number" id="wAge" value="00" required></div>
+        <div class="form-group bg-yellow"><label>Worker ID / License number</label><input type="text" id="wID" value="1234" required></div>
+        <div class="form-group bg-olive"><label>Construction site</label><input type="text" id="wSite" value="Khulna Site" required></div>
+        <div class="form-group bg-light-blue"><label>Emergency contact</label><input type="text" id="wEmerg" value="+8801700000000" required></div>
+        <div class="form-group bg-green"><label>Supervisor contact</label><input type="text" id="wSuper" value="+8801800000000" required></div>
+        <button type="submit" class="btn-purple" style="margin-top: 10px;">SAVE REGISTRATION</button>
+      </form>
+    </div>
 
-          // Gas Level Status (OSHA PEL Danger Threshold: 50 PPM)
-          if (gasVal >= 50.0) {
-            updateTag('tagGas', 'HIGH', 'high');
-          } else {
-            updateTag('tagGas', 'NORMAL', 'normal');
-          }
+    <!-- SCREEN 3 -->
+    <div class="screen-view" id="screen3">
+      <div class="registered-section-title">Registered Workers (<span id="workerCount">0</span>)</div>
+      <p style="font-size: 12px; color: #64748b; margin-bottom: 10px;">লাইভ ড্যাশবোর্ড দেখতে ওয়ার্কারের উপর ক্লিক করুন:</p>
+      <div class="workers-list" id="registeredWorkersList"></div>
+    </div>
 
-          // Fall & Motion Status (Standard Fall Threshold: 2.5G)
-          if (accelVal >= 2.5) {
-            updateTag('tagMotion', 'FALL DETECTED', 'high');
-          } else if (accelVal > 0) {
-            updateTag('tagMotion', 'NORMAL', 'normal');
-          } else {
-            updateTag('tagMotion', 'OFFLINE', 'off');
-          }
+    <!-- SCREEN 4 -->
+    <div class="screen-view" id="screen4">
+      <div id="statusBanner" class="status-banner offline-bg">
+        <div><i class="fa-solid fa-plug-circle-xmark" id="statusIcon"></i> <span id="statusText">WAITING FOR HARDWARE...</span></div>
+        <button id="audioToggle" onclick="toggleAudio()" style="background:none; border:none; cursor:pointer; color:inherit;">
+          <i class="fa-solid fa-volume-high" id="audioIcon"></i>
+        </button>
+      </div>
 
-          // GPS Location Link Status
-          if (latVal !== 0 && lngVal !== 0) {
-            document.getElementById('valGps').innerText = "Open Live GPS Map";
-            document.getElementById('valGps').style.color = "#0284c7";
-            document.getElementById('valGps').href = `https://www.google.com/maps?q=${latVal},${lngVal}`;
-          } else {
-            document.getElementById('valGps').innerText = "GPS No Detect";
-            document.getElementById('valGps').style.color = "#64748b";
-            document.getElementById('valGps').href = "#";
-          }
+      <div class="profile-card">
+        <div id="netStatusBadge" class="net-badge offline"><i class="fa-solid fa-circle" style="font-size:8px;"></i> <span id="netStatusText">OFFLINE</span></div>
+        <div class="profile-title"><i class="fa-regular fa-user"></i> Worker Profile</div>
+        <div class="profile-info">
+          <p><strong>Name:</strong> <span id="dispName">user</span></p>
+          <p><strong>ID:</strong> <span id="dispID">1234</span></p>
+          <p><strong>Site:</strong> <span id="dispSite">Khulna Site</span></p>
+          <p><strong>Emergency:</strong> <span id="dispEmerg">+8801700000000</span></p>
+        </div>
+      </div>
 
-          // Emergency Detection Logic (Matches ESP32 Code Priority Settings)
-          const isCritical = gasVal >= 50.0 || accelVal >= 2.5 || (spo2Val > 0 && spo2Val <= 90);
-          const isWarning = (envTempVal >= 32.2 || envTempVal <= 10.0) || (bodyTempFahrenheit > 100.4 || (bodyTempFahrenheit < 95.0 && bodyTempFahrenheit > 0)) || (spo2Val > 0 && (heartRateVal <= 50 || heartRateVal >= 120));
+      <!-- METRICS GRID -->
+      <div class="metrics-grid">
+        <!-- Floor Level Card -->
+        <div class="metric-card card-floor">
+          <div class="metric-icon icon-floor"><i class="fa-solid fa-building"></i></div>
+          <div class="metric-details">
+            <span class="metric-label">Floor Level</span>
+            <span class="metric-value">
+              <span id="valFloor">0</span> <small style="font-size:12px; font-weight:normal;">Floor</small>
+            </span>
+            <span class="safe-range-text">Safe Default: 0 - 50 Floor</span>
+          </div>
+        </div>
 
-          const statusBanner = document.getElementById('statusBanner');
-          const statusText = document.getElementById('statusText');
-          const statusIcon = document.getElementById('statusIcon');
+        <!-- Heart Rate & SpO2 Card -->
+        <div class="metric-card card-heart">
+          <div class="metric-icon icon-heart"><i class="fa-solid fa-heart-pulse"></i></div>
+          <div class="metric-details">
+            <span class="metric-label">Heart Rate & SpO₂</span>
+            <span class="metric-value">
+              <span id="valHeart">0</span><small style="font-size:12px; font-weight:normal;">bpm</small> | <span id="valSpo2">0</span><small style="font-size:12px; font-weight:normal;">%</small>
+              <span id="tagHeart" class="status-tag tag-off">OFFLINE</span>
+            </span>
+            <span class="safe-range-text">Safe Default: HR 50-120 bpm | SpO₂ &gt; 90%</span>
+          </div>
+        </div>
 
-          if (isCritical || isWarning) {
-            statusBanner.className = "status-banner alert-bg";
-            statusText.innerText = isCritical ? "CRITICAL ALERT DETECTED!" : "SAFETY WARNING DETECTED!";
-            statusIcon.className = "fa-solid fa-triangle-exclamation";
-            
-            if (!audioMuted) siren.play().catch(e => {});
+        <!-- Body Temperature Card -->
+        <div class="metric-card card-bodytemp">
+          <div class="metric-icon icon-bodytemp"><i class="fa-solid fa-thermometer-half"></i></div>
+          <div class="metric-details">
+            <span class="metric-label">Body Temperature</span>
+            <span class="metric-value">
+              <span id="valBodyTemp">0</span>°F
+              <span id="tagBodyTemp" class="status-tag tag-off">OFFLINE</span>
+            </span>
+            <span class="safe-range-text">Safe Default: 95.0°F - 102.4°F (35.0°C - 38.8°C)</span>
+          </div>
+        </div>
 
-            if (!lastCriticalState) {
-              triggerPopup("EMERGENCY ALERT", "Hazardous worker condition detected on live sensors!", "fa-triangle-exclamation", "#ef4444");
-              lastCriticalState = true;
-            }
-          } else {
-            statusBanner.className = "status-banner normal-bg";
-            statusText.innerText = "SYSTEM SAFE";
-            statusIcon.className = "fa-solid fa-shield-halved";
-            siren.pause();
-            siren.currentTime = 0;
-            lastCriticalState = false;
-          }
-        });
+        <!-- Environmental Temperature Card -->
+        <div class="metric-card card-envtemp">
+          <div class="metric-icon icon-envtemp"><i class="fa-solid fa-sun"></i></div>
+          <div class="metric-details">
+            <span class="metric-label">Environmental Temp</span>
+            <span class="metric-value">
+              <span id="valEnvTemp">0</span>°C
+              <span id="tagEnvTemp" class="status-tag tag-off">OFFLINE</span>
+            </span>
+            <span class="safe-range-text">Safe Default: 10.0°C - 45.0°C </span>
+          </div>
+        </div>
+
+        <!-- Gas Level Card -->
+        <div class="metric-card card-gas">
+          <div class="metric-icon icon-gas"><i class="fa-solid fa-fire"></i></div>
+          <div class="metric-details">
+            <span class="metric-label">Gas Level (MQ-2)</span>
+            <span class="metric-value">
+              <span id="valGas">0</span> <small style="font-size:12px; font-weight:normal;">ppm</small>
+              <span id="tagGas" class="status-tag tag-off">OFFLINE</span>
+            </span>
+            <span class="safe-range-text">Safe Default: &lt; 300 ppm </span>
+          </div>
+        </div>
+
+        <!-- Motion / Fall Card -->
+        <div class="metric-card card-fall">
+          <div class="metric-icon icon-fall"><i class="fa-solid fa-person-falling"></i></div>
+          <div class="metric-details">
+            <span class="metric-label">Motion / Fall</span>
+            <span class="metric-value">
+              <span id="valAccel">0.0</span> <small style="font-size:12px; font-weight:normal;">G</small>
+              <span id="tagMotion" class="status-tag tag-off">OFFLINE</span>
+            </span>
+            <span class="safe-range-text">Safe Default: Normal (&lt; 1.2G)</span>
+          </div>
+        </div>
+
+        <!-- GPS Location Card -->
+        <div class="metric-card card-gps">
+          <div class="metric-icon icon-gps"><i class="fa-solid fa-location-dot"></i></div>
+          <div class="metric-details">
+            <span class="metric-label">GPS Location</span>
+            <a id="valGps" href="#" target="_blank" style="font-size:13px; font-weight:700; color:#64748b; text-decoration:none;">GPS No Detect</a>
+            <span class="safe-range-text">Safe Default: Active Live Lock</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <audio id="sirenSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" loop preload="auto"></audio>
+
+  <script>
+    // Listen for Realtime Sensor Data
+db.ref('/SmartHelmet').on('value', (snapshot) => {
+  const data = snapshot.val();
+  if (!data) {
+    setHardwareOfflineState();
+    return;
+  }
+
+  // Watchdog timer reset
+  clearTimeout(deviceWatchdogTimer);
+  deviceWatchdogTimer = setTimeout(() => { setHardwareOfflineState(); }, 10000);
+  setHardwareOnlineState();
+
+  // Parse numerical data from ESP32
+  const floorVal = safeNum(data.floor);
+  const heartRateVal = safeNum(data.heartRate);
+  const spo2Val = safeNum(data.spo2);
+  
+  let rawBodyTemp = safeNum(data.bodyTemp); // Sent in Celsius from DS18B20
+  let bodyTempFahrenheit = rawBodyTemp > 0 ? (rawBodyTemp < 60 ? (rawBodyTemp * 1.8 + 32) : rawBodyTemp) : 0;
+
+  const envTempVal = safeNum(data.envTemp);
+  const gasVal = safeNum(data.gas);
+  const accelVal = safeNum(data.accel);
+  const latVal = safeNum(data.lat);
+  const lngVal = safeNum(data.lng);
+
+  // Update DOM Text Values
+  document.getElementById('valFloor').innerText = floorVal;
+  document.getElementById('valHeart').innerText = heartRateVal;
+  document.getElementById('valSpo2').innerText = spo2Val;
+  document.getElementById('valBodyTemp').innerText = bodyTempFahrenheit.toFixed(1);
+  document.getElementById('valEnvTemp').innerText = envTempVal.toFixed(1);
+  document.getElementById('valGas').innerText = gasVal;
+  document.getElementById('valAccel').innerText = accelVal.toFixed(1);
+
+  // --- Dynamic Status Tags ---
+
+  // 1. Heart Rate & SpO2 Status
+  if (heartRateVal > 120 || (spo2Val > 0 && spo2Val <= 90)) {
+    updateTag('tagHeart', heartRateVal > 120 ? 'HIGH' : 'LOW', 'high');
+  } else if (heartRateVal < 50 && heartRateVal > 0) {
+    updateTag('tagHeart', 'LOW', 'low');
+  } else {
+    updateTag('tagHeart', 'NORMAL', 'normal');
+  }
+
+  // 2. Body Temperature Status (35.0°C to 38.8°C / 95.0°F to 101.8°F)
+  if (rawBodyTemp >= 38.8 || bodyTempFahrenheit >= 101.8) {
+    updateTag('tagBodyTemp', 'HIGH', 'high');
+  } else if (rawBodyTemp > 0 && rawBodyTemp < 35.0) {
+    updateTag('tagBodyTemp', 'LOW', 'low'); // 89.2°F triggers LOW tag
+  } else if (rawBodyTemp === 0) {
+    updateTag('tagBodyTemp', 'OFFLINE', 'off');
+  } else {
+    updateTag('tagBodyTemp', 'NORMAL', 'normal');
+  }
+
+  // 3. Environmental Temp Status (10.0°C to 45.0°C)
+  if (envTempVal >= 45.0) {
+    updateTag('tagEnvTemp', 'HIGH', 'high');
+  } else if (envTempVal <= 10.0 && envTempVal > -50) {
+    updateTag('tagEnvTemp', 'LOW', 'low');
+  } else {
+    updateTag('tagEnvTemp', 'NORMAL', 'normal');
+  }
+
+  // 4. Gas Level Status (Threshold: >= 300 PPM)
+  if (gasVal >= 300.0) {
+    updateTag('tagGas', 'HIGH', 'high');
+  } else {
+    updateTag('tagGas', 'NORMAL', 'normal'); // 90 or 92 PPM will now correctly show NORMAL
+  }
+
+  // 5. Fall & Motion Status (Threshold: >= 1.2G)
+  if (accelVal >= 1.2) {
+    updateTag('tagMotion', 'FALL DETECTED', 'high');
+  } else if (accelVal > 0) {
+    updateTag('tagMotion', 'NORMAL', 'normal');
+  } else {
+    updateTag('tagMotion', 'OFFLINE', 'off');
+  }
+
+  // GPS Map Link
+  if (latVal !== 0 && lngVal !== 0) {
+    document.getElementById('valGps').innerText = "Open Live GPS Map";
+    document.getElementById('valGps').style.color = "#0284c7";
+    document.getElementById('valGps').href = `https://www.google.com/maps?q=${latVal},${lngVal}`;
+  } else {
+    document.getElementById('valGps').innerText = "GPS No Detect";
+    document.getElementById('valGps').style.color = "#64748b";
+    document.getElementById('valGps').href = "#";
+  }
+
+  // --- Alert System Logic ---
+  const isCritical = (gasVal >= 300.0) || (accelVal >= 1.2) || (spo2Val > 0 && spo2Val <= 90);
+  const isWarning  = (envTempVal >= 45.0 || envTempVal <= 10.0) || 
+                     (rawBodyTemp >= 38.8 || (rawBodyTemp < 35.0 && rawBodyTemp > 0)) || 
+                     (spo2Val > 0 && (heartRateVal <= 50 || heartRateVal >= 120));
+
+  const statusBanner = document.getElementById('statusBanner');
+  const statusText   = document.getElementById('statusText');
+  const statusIcon   = document.getElementById('statusIcon');
+
+  if (isCritical || isWarning) {
+    statusBanner.className = "status-banner alert-bg";
+    statusText.innerText = isCritical ? "CRITICAL ALERT DETECTED!" : "SAFETY WARNING DETECTED!";
+    statusIcon.className = "fa-solid fa-triangle-exclamation";
+    
+    if (!audioMuted) siren.play().catch(e => {});
+
+    if (!lastCriticalState) {
+      triggerPopup("EMERGENCY ALERT", "Hazardous worker condition detected on live sensors!", "fa-triangle-exclamation", "#ef4444");
+      lastCriticalState = true;
+    }
+  } else {
+    statusBanner.className = "status-banner normal-bg";
+    statusText.innerText = "SYSTEM SAFE";
+    statusIcon.className = "fa-solid fa-shield-halved";
+    siren.pause();
+    siren.currentTime = 0;
+    lastCriticalState = false;
+  }
+});
+  </script>
+</body>
+</html>
+
       }
     } catch(e) {
       console.warn("Firebase Init Error:", e);
