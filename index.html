@@ -122,18 +122,27 @@
     /* Metrics Grid */
     .metrics-grid { display: flex; flex-direction: column; gap: 8px; }
     .metric-card {
-      background: #ffffff; border-radius: 10px; padding: 10px 12px;
+      border-radius: 10px; padding: 10px 12px;
       display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);
       border: 1px solid #e2e8f0; transition: 0.3s;
     }
     
+    /* Distinct Light Backgrounds for Each Card */
+    .card-floor { background-color: #fbfbfe; }
+    .card-heart { background-color: #fff5f7; }
+    .card-bodytemp { background-color: #fff1f2; }
+    .card-envtemp { background-color: #fffbe6; }
+    .card-gas { background-color: #fff7ed; }
+    .card-fall { background-color: #f0f9ff; }
+    .card-gps { background-color: #f0fdf4; }
+
     .metric-icon {
-      width: 36px; height: 36px; border-radius: 50%; display: flex;
-      align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+      width: 38px; height: 38px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;
     }
     .metric-details { display: flex; flex-direction: column; flex: 1; }
     .metric-label { font-size: 11px; font-weight: 600; color: #64748b; }
-    .metric-value { font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 1px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+    .metric-value { font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 1px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 
     /* Safe Value & Highlight Badges */
     .safe-range-text { font-size: 10px; color: #64748b; margin-top: 3px; font-weight: 600; }
@@ -143,13 +152,14 @@
     .tag-low { background: #fef3c7; color: #b45309; }
     .tag-off { background: #f1f5f9; color: #64748b; }
 
-    .icon-heart { background: #ffe4e6; color: #e11d48; }
-    .icon-temp { background: #fef3c7; color: #d97706; }
+    /* Icon Themes */
+    .icon-floor { background: #f3e8ff; color: #9333ea; }
+    .icon-heart { background: #fce7f3; color: #db2777; }
+    .icon-bodytemp { background: #ffe4e6; color: #e11d48; }
+    .icon-envtemp { background: #fef3c7; color: #d97706; }
     .icon-gas { background: #ffedd5; color: #ea580c; }
     .icon-fall { background: #e0f2fe; color: #0284c7; }
     .icon-gps { background: #dcfce7; color: #16a34a; }
-    .icon-floor { background: #f3e8ff; color: #9333ea; }
-    .icon-pressure { background: #e0e7ff; color: #4f46e5; }
 
     /* Popup Modal */
     .popup-overlay {
@@ -213,7 +223,7 @@
     <!-- SCREEN 3 -->
     <div class="screen-view" id="screen3">
       <div class="registered-section-title">Registered Workers (<span id="workerCount">0</span>)</div>
-      <p style="font-size: 12px; color: #64748b; margin-bottom: 10px;">লাইভ ড্যাশবোর্ড দেখতে ওয়ার্কারের উপর ক্লিক করুন:</p>
+      <p style="font-size: 12px; color: #64748b; margin-bottom: 10px;">লাইভ ড্যাশবোর্ড দেখতে ওয়ার্কারের উপর ক্লিক করুন:</p>
       <div class="workers-list" id="registeredWorkersList"></div>
     </div>
 
@@ -237,57 +247,61 @@
         </div>
       </div>
 
-      <!-- METRICS GRID WITH SAFE VALUES & STATUS HIGHLIGHTS -->
+      <!-- METRICS GRID -->
       <div class="metrics-grid">
-        <div class="metric-card">
+        <!-- Floor Level Card -->
+        <div class="metric-card card-floor">
           <div class="metric-icon icon-floor"><i class="fa-solid fa-building"></i></div>
           <div class="metric-details">
             <span class="metric-label">Floor Level</span>
             <span class="metric-value">
               <span id="valFloor">0</span> <small style="font-size:12px; font-weight:normal;">Floor</small>
-              <span id="tagFloor" class="status-tag tag-off">OFFLINE</span>
             </span>
             <span class="safe-range-text">Safe Default: 0 - 50 Floor</span>
           </div>
         </div>
 
-        <div class="metric-card">
-          <div class="metric-icon icon-pressure"><i class="fa-solid fa-gauge-high"></i></div>
-          <div class="metric-details">
-            <span class="metric-label">Air Pressure</span>
-            <span class="metric-value">
-              <span id="valPressure">0</span> <small style="font-size:12px; font-weight:normal;">hPa</small>
-              <span id="tagPressure" class="status-tag tag-off">OFFLINE</span>
-            </span>
-            <span class="safe-range-text">Safe Default: 950 - 1050 hPa</span>
-          </div>
-        </div>
-
-        <div class="metric-card">
+        <!-- Heart Rate & SpO2 Card -->
+        <div class="metric-card card-heart">
           <div class="metric-icon icon-heart"><i class="fa-solid fa-heart-pulse"></i></div>
           <div class="metric-details">
-            <span class="metric-label">Heart Rate (HR) & SpO₂</span>
+            <span class="metric-label">Heart Rate & SpO₂</span>
             <span class="metric-value">
               <span id="valHeart">0</span><small style="font-size:12px; font-weight:normal;">bpm</small> | <span id="valSpo2">0</span><small style="font-size:12px; font-weight:normal;">%</small>
               <span id="tagHeart" class="status-tag tag-off">OFFLINE</span>
             </span>
-            <span class="safe-range-text">Safe Default: HR 60-100 bpm | SpO₂ ≥ 95%</span>
+            <span class="safe-range-text">Safe Default: HR 50-120 bpm | SpO₂ &gt; 90%</span>
           </div>
         </div>
 
-        <div class="metric-card">
-          <div class="metric-icon icon-temp"><i class="fa-solid fa-temperature-high"></i></div>
+        <!-- Body Temperature Card -->
+        <div class="metric-card card-bodytemp">
+          <div class="metric-icon icon-bodytemp"><i class="fa-solid fa-thermometer-half"></i></div>
           <div class="metric-details">
-            <span class="metric-label">Body & Env Temp</span>
+            <span class="metric-label">Body Temperature</span>
             <span class="metric-value">
-              Body: <span id="valBodyTemp">0</span>°F | Env: <span id="valEnvTemp">0</span>°C
+              <span id="valBodyTemp">0</span>°F
               <span id="tagBodyTemp" class="status-tag tag-off">OFFLINE</span>
             </span>
-            <span class="safe-range-text">Safe Default: Body 97-99°F | Env &lt; 40°C</span>
+            <span class="safe-range-text">Safe Default: 95.0°F - 100.4°F (35.0°C - 38.0°C)</span>
           </div>
         </div>
 
-        <div class="metric-card">
+        <!-- Environmental Temperature Card -->
+        <div class="metric-card card-envtemp">
+          <div class="metric-icon icon-envtemp"><i class="fa-solid fa-sun"></i></div>
+          <div class="metric-details">
+            <span class="metric-label">Environmental Temp</span>
+            <span class="metric-value">
+              <span id="valEnvTemp">0</span>°C
+              <span id="tagEnvTemp" class="status-tag tag-off">OFFLINE</span>
+            </span>
+            <span class="safe-range-text">Safe Default: 10.0°C - 32.2°C (OSHA)</span>
+          </div>
+        </div>
+
+        <!-- Gas Level Card -->
+        <div class="metric-card card-gas">
           <div class="metric-icon icon-gas"><i class="fa-solid fa-fire"></i></div>
           <div class="metric-details">
             <span class="metric-label">Gas Level (MQ-2)</span>
@@ -295,20 +309,25 @@
               <span id="valGas">0</span> <small style="font-size:12px; font-weight:normal;">ppm</small>
               <span id="tagGas" class="status-tag tag-off">OFFLINE</span>
             </span>
-            <span class="safe-range-text">Safe Default: &lt; 400 ppm</span>
+            <span class="safe-range-text">Safe Default: &lt; 50 ppm (OSHA PEL)</span>
           </div>
         </div>
 
-        <div class="metric-card">
+        <!-- Motion / Fall Card -->
+        <div class="metric-card card-fall">
           <div class="metric-icon icon-fall"><i class="fa-solid fa-person-falling"></i></div>
           <div class="metric-details">
-            <span class="metric-label">Motion / Fall (<span id="valAccel">0.0</span>G)</span>
-            <span class="metric-value" id="valMotionText">No Detect</span>
-            <span class="safe-range-text">Safe Default: Normal (&lt; 2.5G)</span>
+            <span class="metric-label">Motion / Fall</span>
+            <span class="metric-value">
+              <span id="valAccel">0.0</span> <small style="font-size:12px; font-weight:normal;">G</small>
+              <span id="tagMotion" class="status-tag tag-off">OFFLINE</span>
+            </span>
+            <span class="safe-range-text">Safe Default: Normal (&lt; 1.2G)</span>
           </div>
         </div>
 
-        <div class="metric-card">
+        <!-- GPS Location Card -->
+        <div class="metric-card card-gps">
           <div class="metric-icon icon-gps"><i class="fa-solid fa-location-dot"></i></div>
           <div class="metric-details">
             <span class="metric-label">GPS Location</span>
@@ -443,19 +462,15 @@
       document.getElementById('netStatusText').innerText = "OFFLINE";
 
       document.getElementById('valFloor').innerText = "0";
-      document.getElementById('valPressure').innerText = "0";
       document.getElementById('valHeart').innerText = "0";
       document.getElementById('valSpo2').innerText = "0";
       document.getElementById('valBodyTemp').innerText = "0";
       document.getElementById('valEnvTemp').innerText = "0";
       document.getElementById('valGas').innerText = "0";
       document.getElementById('valAccel').innerText = "0.0";
-
-      // Replace Offline text with No Detect for Motion
-      document.getElementById('valMotionText').innerHTML = 'No Detect <span class="status-tag tag-off">OFFLINE</span>';
       
       // Tags Reset
-      ['tagFloor', 'tagPressure', 'tagHeart', 'tagBodyTemp', 'tagGas'].forEach(id => {
+      ['tagHeart', 'tagBodyTemp', 'tagEnvTemp', 'tagGas', 'tagMotion'].forEach(id => {
         const el = document.getElementById(id);
         if(el) { el.innerText = "OFFLINE"; el.className = "status-tag tag-off"; }
       });
@@ -525,7 +540,6 @@
           setHardwareOnlineState();
 
           const floorVal = safeNum(data.floor);
-          const pressureVal = safeNum(data.pressure);
           const heartRateVal = safeNum(data.heartRate);
           const spo2Val = safeNum(data.spo2);
           
@@ -540,7 +554,6 @@
 
           // Update UI Numerical Values
           document.getElementById('valFloor').innerText = floorVal;
-          document.getElementById('valPressure').innerText = pressureVal;
           document.getElementById('valHeart').innerText = heartRateVal;
           document.getElementById('valSpo2').innerText = spo2Val;
           document.getElementById('valBodyTemp').innerText = bodyTempFahrenheit.toFixed(1);
@@ -548,33 +561,52 @@
           document.getElementById('valGas').innerText = gasVal;
           document.getElementById('valAccel').innerText = accelVal.toFixed(1);
 
-          // Dynamic Status Tag Highlights (HIGH / LOW / NORMAL)
-          updateTag('tagFloor', 'NORMAL', 'normal');
+          // --- Dynamic Status Tag Highlights ---
 
-          if (pressureVal < 950) updateTag('tagPressure', 'LOW', 'low');
-          else if (pressureVal > 1050) updateTag('tagPressure', 'HIGH', 'high');
-          else updateTag('tagPressure', 'NORMAL', 'normal');
-
-          if (heartRateVal > 100 || (spo2Val > 0 && spo2Val < 92)) updateTag('tagHeart', heartRateVal > 100 ? 'HIGH' : 'LOW', heartRateVal > 100 ? 'high' : 'low');
-          else updateTag('tagHeart', 'NORMAL', 'normal');
-
-          if (bodyTempFahrenheit > 100.4) updateTag('tagBodyTemp', 'HIGH', 'high');
-          else if (bodyTempFahrenheit > 0 && bodyTempFahrenheit < 95) updateTag('tagBodyTemp', 'LOW', 'low');
-          else updateTag('tagBodyTemp', 'NORMAL', 'normal');
-
-          if (gasVal > 400) updateTag('tagGas', 'HIGH', 'high');
-          else updateTag('tagGas', 'NORMAL', 'normal');
-
-          // Motion Status Update
-          if (accelVal > 2.5) {
-            document.getElementById('valMotionText').innerHTML = 'Fall Detected <span class="status-tag tag-high">HIGH</span>';
-          } else if (accelVal > 0) {
-            document.getElementById('valMotionText').innerHTML = 'Normal <span class="status-tag tag-normal">NORMAL</span>';
+          // Heart Rate & SpO2 Status (AHA / WHO Standards)
+          if (heartRateVal > 120 || (spo2Val > 0 && spo2Val <= 90)) {
+            updateTag('tagHeart', heartRateVal > 120 ? 'HIGH' : 'LOW', 'high');
+          } else if (heartRateVal < 50 && heartRateVal > 0) {
+            updateTag('tagHeart', 'LOW', 'low');
           } else {
-            document.getElementById('valMotionText').innerHTML = 'No Detect <span class="status-tag tag-off">NO MOTION</span>';
+            updateTag('tagHeart', 'NORMAL', 'normal');
           }
 
-          // GPS Status
+          // Body Temperature Status (Medical Criteria: Fever > 100.4°F / Hypothermia < 95.0°F)
+          if (bodyTempFahrenheit > 100.4) {
+            updateTag('tagBodyTemp', 'HIGH', 'high');
+          } else if (bodyTempFahrenheit > 0 && bodyTempFahrenheit < 95.0) {
+            updateTag('tagBodyTemp', 'LOW', 'low');
+          } else {
+            updateTag('tagBodyTemp', 'NORMAL', 'normal');
+          }
+
+          // Environmental Temperature Status (OSHA Workplace Limits: Cold < 10.0°C / Heat > 32.2°C)
+          if (envTempVal >= 32.2) {
+            updateTag('tagEnvTemp', 'HIGH', 'high');
+          } else if (envTempVal <= 10.0 && envTempVal > -50) {
+            updateTag('tagEnvTemp', 'LOW', 'low');
+          } else {
+            updateTag('tagEnvTemp', 'NORMAL', 'normal');
+          }
+
+          // Gas Level Status (OSHA PEL Danger Threshold: 50 PPM)
+          if (gasVal >= 50.0) {
+            updateTag('tagGas', 'HIGH', 'high');
+          } else {
+            updateTag('tagGas', 'NORMAL', 'normal');
+          }
+
+          // Fall & Motion Status (Standard Fall Threshold: 2.5G)
+          if (accelVal >= 2.5) {
+            updateTag('tagMotion', 'FALL DETECTED', 'high');
+          } else if (accelVal > 0) {
+            updateTag('tagMotion', 'NORMAL', 'normal');
+          } else {
+            updateTag('tagMotion', 'OFFLINE', 'off');
+          }
+
+          // GPS Location Link Status
           if (latVal !== 0 && lngVal !== 0) {
             document.getElementById('valGps').innerText = "Open Live GPS Map";
             document.getElementById('valGps').style.color = "#0284c7";
@@ -585,21 +617,23 @@
             document.getElementById('valGps').href = "#";
           }
 
-          // Emergency Detection
-          const isCritical = gasVal > 600 || accelVal > 2.5 || (bodyTempFahrenheit > 100.4) || (spo2Val > 0 && spo2Val < 92);
+          // Emergency Detection Logic (Matches ESP32 Code Priority Settings)
+          const isCritical = gasVal >= 50.0 || accelVal >= 2.5 || (spo2Val > 0 && spo2Val <= 90);
+          const isWarning = (envTempVal >= 32.2 || envTempVal <= 10.0) || (bodyTempFahrenheit > 100.4 || (bodyTempFahrenheit < 95.0 && bodyTempFahrenheit > 0)) || (spo2Val > 0 && (heartRateVal <= 50 || heartRateVal >= 120));
+
           const statusBanner = document.getElementById('statusBanner');
           const statusText = document.getElementById('statusText');
           const statusIcon = document.getElementById('statusIcon');
 
-          if (isCritical) {
+          if (isCritical || isWarning) {
             statusBanner.className = "status-banner alert-bg";
-            statusText.innerText = "CRITICAL ALERT DETECTED!";
+            statusText.innerText = isCritical ? "CRITICAL ALERT DETECTED!" : "SAFETY WARNING DETECTED!";
             statusIcon.className = "fa-solid fa-triangle-exclamation";
             
             if (!audioMuted) siren.play().catch(e => {});
 
             if (!lastCriticalState) {
-              triggerPopup("EMERGENCY ALERT", "Hazardous condition detected on live sensors!", "fa-triangle-exclamation", "#ef4444");
+              triggerPopup("EMERGENCY ALERT", "Hazardous worker condition detected on live sensors!", "fa-triangle-exclamation", "#ef4444");
               lastCriticalState = true;
             }
           } else {
