@@ -124,10 +124,16 @@
     .metric-card {
       border-radius: 10px; padding: 10px 12px;
       display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-      border: 1px solid #e2e8f0; transition: 0.3s;
+      border: 1px solid #e2e8f0; transition: background-color 0.3s, border-color 0.3s;
     }
     
-    /* Distinct Light Backgrounds for Each Card */
+    /* Highlight class for abnormal states */
+    .metric-card.card-alert {
+      background-color: #fee2e2 !important;
+      border-color: #ef4444 !important;
+    }
+
+    /* Light Backgrounds for Cards */
     .card-floor { background-color: #fbfbfe; }
     .card-heart { background-color: #fff5f7; }
     .card-bodytemp { background-color: #fff1f2; }
@@ -178,7 +184,7 @@
     }
     .popup-icon { font-size: 40px; color: #ef4444; margin-bottom: 10px; }
     .popup-title { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
-    .popup-msg { font-size: 13px; color: #475569; margin-bottom: 16px; }
+    .popup-msg { font-size: 13px; color: #475569; margin-bottom: 16px; white-space: pre-line; }
     .popup-close-btn {
       background: #0f172a; color: white; border: none; padding: 10px 20px;
       border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%;
@@ -250,24 +256,24 @@
       <!-- METRICS GRID -->
       <div class="metrics-grid">
         <!-- Floor Level Card -->
-        <div class="metric-card card-floor">
+        <div class="metric-card card-floor" id="cardFloor">
           <div class="metric-icon icon-floor"><i class="fa-solid fa-building"></i></div>
           <div class="metric-details">
             <span class="metric-label">Floor Level</span>
-            <span class="metric-value">
-              <span id="valFloor">0</span> <small style="font-size:12px; font-weight:normal;">Floor</small>
+            <span class="metric-value" id="valFloorContainer">
+              <span id="valFloor">Ground Floor</span>
             </span>
             <span class="safe-range-text">Safe Default: 0 - 50 Floor</span>
           </div>
         </div>
 
         <!-- Heart Rate & SpO2 Card -->
-        <div class="metric-card card-heart">
+        <div class="metric-card card-heart" id="cardHeart">
           <div class="metric-icon icon-heart"><i class="fa-solid fa-heart-pulse"></i></div>
           <div class="metric-details">
             <span class="metric-label">Heart Rate & SpO₂</span>
             <span class="metric-value">
-              <span id="valHeart">0</span><small style="font-size:12px; font-weight:normal;">bpm</small> | <span id="valSpo2">0</span><small style="font-size:12px; font-weight:normal;">%</small>
+              <span id="valHeartText">Not Detect</span>
               <span id="tagHeart" class="status-tag tag-off">OFFLINE</span>
             </span>
             <span class="safe-range-text">Safe Default: HR 50-120 bpm | SpO₂ &gt; 90%</span>
@@ -275,7 +281,7 @@
         </div>
 
         <!-- Body Temperature Card -->
-        <div class="metric-card card-bodytemp">
+        <div class="metric-card card-bodytemp" id="cardBodyTemp">
           <div class="metric-icon icon-bodytemp"><i class="fa-solid fa-thermometer-half"></i></div>
           <div class="metric-details">
             <span class="metric-label">Body Temperature</span>
@@ -288,7 +294,7 @@
         </div>
 
         <!-- Environmental Temperature Card -->
-        <div class="metric-card card-envtemp">
+        <div class="metric-card card-envtemp" id="cardEnvTemp">
           <div class="metric-icon icon-envtemp"><i class="fa-solid fa-sun"></i></div>
           <div class="metric-details">
             <span class="metric-label">Environmental Temp</span>
@@ -301,7 +307,7 @@
         </div>
 
         <!-- Gas Level Card -->
-        <div class="metric-card card-gas">
+        <div class="metric-card card-gas" id="cardGas">
           <div class="metric-icon icon-gas"><i class="fa-solid fa-fire"></i></div>
           <div class="metric-details">
             <span class="metric-label">Gas Level (MQ-2)</span>
@@ -314,7 +320,7 @@
         </div>
 
         <!-- Motion / Fall Card -->
-        <div class="metric-card card-fall">
+        <div class="metric-card card-fall" id="cardFall">
           <div class="metric-icon icon-fall"><i class="fa-solid fa-person-falling"></i></div>
           <div class="metric-details">
             <span class="metric-label">Motion / Fall</span>
@@ -327,11 +333,11 @@
         </div>
 
         <!-- GPS Location Card -->
-        <div class="metric-card card-gps">
+        <div class="metric-card card-gps" id="cardGps">
           <div class="metric-icon icon-gps"><i class="fa-solid fa-location-dot"></i></div>
           <div class="metric-details">
             <span class="metric-label">GPS Location</span>
-            <a id="valGps" href="#" target="_blank" style="font-size:13px; font-weight:700; color:#64748b; text-decoration:none;">GPS No Detect</a>
+            <a id="valGps" href="javascript:void(0);" style="font-size:13px; font-weight:700; color:#64748b; text-decoration:none;">GPS No Detect</a>
             <span class="safe-range-text">Safe Default: Active Live Lock</span>
           </div>
         </div>
@@ -348,6 +354,7 @@
     let audioMuted = false;
     let lastCriticalState = false;
     let deviceWatchdogTimer = null;
+    let isHardwareOnline = false;
 
     const siren = document.getElementById('sirenSound');
 
@@ -456,14 +463,30 @@
       document.getElementById('popupOverlay').classList.remove('active');
     }
 
+    // Toggle Alert Styling on Metric Cards
+    function setCardHighlight(cardId, isAlert) {
+      const card = document.getElementById(cardId);
+      if (!card) return;
+      if (isAlert) {
+        card.classList.add('card-alert');
+      } else {
+        card.classList.remove('card-alert');
+      }
+    }
+
     // Force Reset Dashboard UI when Hardware is Offline
     function setHardwareOfflineState() {
+      // Trigger Popup only if connection was previously active and then dropped
+      if (isHardwareOnline) {
+        triggerPopup("SYSTEM OFFLINE", "Hardware signal lost or disconnected from Firebase!", "fa-plug-circle-xmark", "#ef4444");
+      }
+      isHardwareOnline = false;
+
       document.getElementById('netStatusBadge').className = "net-badge offline";
       document.getElementById('netStatusText').innerText = "OFFLINE";
 
-      document.getElementById('valFloor').innerText = "0";
-      document.getElementById('valHeart').innerText = "0";
-      document.getElementById('valSpo2').innerText = "0";
+      document.getElementById('valFloor').innerText = "Ground Floor";
+      document.getElementById('valHeartText').innerText = "Not Detect";
       document.getElementById('valBodyTemp').innerText = "0";
       document.getElementById('valEnvTemp').innerText = "0";
       document.getElementById('valGas').innerText = "0";
@@ -475,9 +498,14 @@
         if(el) { el.innerText = "OFFLINE"; el.className = "status-tag tag-off"; }
       });
 
+      // Clear all red card alerts
+      ['cardFloor', 'cardHeart', 'cardBodyTemp', 'cardEnvTemp', 'cardGas', 'cardFall', 'cardGps'].forEach(id => {
+        setCardHighlight(id, false);
+      });
+
       document.getElementById('valGps').innerText = "GPS No Detect";
       document.getElementById('valGps').style.color = "#64748b";
-      document.getElementById('valGps').href = "#";
+      document.getElementById('valGps').href = "javascript:void(0);";
 
       const statusBanner = document.getElementById('statusBanner');
       statusBanner.className = "status-banner offline-bg";
@@ -490,6 +518,7 @@
     }
 
     function setHardwareOnlineState() {
+      isHardwareOnline = true;
       document.getElementById('netStatusBadge').className = "net-badge online";
       document.getElementById('netStatusText').innerText = "ONLINE";
     }
@@ -552,93 +581,141 @@
           const latVal = safeNum(data.lat);
           const lngVal = safeNum(data.lng);
 
-          // Update UI Numerical Values
-          document.getElementById('valFloor').innerText = floorVal;
-          document.getElementById('valHeart').innerText = heartRateVal;
-          document.getElementById('valSpo2').innerText = spo2Val;
-          document.getElementById('valBodyTemp').innerText = bodyTempFahrenheit.toFixed(1);
-          document.getElementById('valEnvTemp').innerText = envTempVal.toFixed(1);
+          // 1. Floor Level Display (0 -> Ground Floor, >0 -> X Floor)
+          if (floorVal === 0) {
+            document.getElementById('valFloor').innerText = "Ground Floor";
+          } else {
+            document.getElementById('valFloor').innerHTML = `${floorVal} <small style="font-size:12px; font-weight:normal;">Floor</small>`;
+          }
+
+          // 2. Heart Rate & SpO2 Display (0 -> Not Detect)
+          if (heartRateVal === 0 && spo2Val === 0) {
+            document.getElementById('valHeartText').innerText = "Not Detect";
+            updateTag('tagHeart', 'OFFLINE', 'off');
+          } else {
+            document.getElementById('valHeartText').innerHTML = `${heartRateVal}<small style="font-size:12px; font-weight:normal;">bpm</small> | ${spo2Val}<small style="font-size:12px; font-weight:normal;">%</small>`;
+          }
+
+          document.getElementById('valBodyTemp').innerText = bodyTempFahrenheit > 0 ? bodyTempFahrenheit.toFixed(1) : "0";
+          document.getElementById('valEnvTemp').innerText = envTempVal !== 0 ? envTempVal.toFixed(1) : "0";
           document.getElementById('valGas').innerText = gasVal;
           document.getElementById('valAccel').innerText = accelVal.toFixed(1);
 
-          // --- Dynamic Status Tag Highlights (Synchronized with ESP32 C++ #defines) ---
+          // Track specific alert reasons for display & Highlight cards
+          let activeAlerts = [];
 
-          // Heart Rate & SpO2 Status (AHA_HR_CRITICAL_LOW: 50, AHA_HR_CRITICAL_HIGH: 120, WHO_SPO2_CRITICAL: 90)
-          if (heartRateVal > 120 || (spo2Val > 0 && spo2Val <= 90)) {
-            updateTag('tagHeart', heartRateVal > 120 ? 'HIGH' : 'LOW', 'high');
-          } else if (heartRateVal < 50 && heartRateVal > 0) {
-            updateTag('tagHeart', 'LOW', 'low');
-          } else {
-            updateTag('tagHeart', 'NORMAL', 'normal');
+          // --- Dynamic Status Tag Highlights & Card Backgrounds ---
+
+          // Heart Rate & SpO2
+          let isHeartAlert = false;
+          if (heartRateVal > 0 || spo2Val > 0) {
+            if (heartRateVal > 120) {
+              updateTag('tagHeart', 'HIGH HR', 'high');
+              activeAlerts.push(`High Heart Rate (${heartRateVal} bpm)`);
+              isHeartAlert = true;
+            } else if (spo2Val > 0 && spo2Val <= 90) {
+              updateTag('tagHeart', 'CRITICAL SPO2', 'high');
+              activeAlerts.push(`Low SpO₂ (${spo2Val}%)`);
+              isHeartAlert = true;
+            } else if (heartRateVal < 50 && heartRateVal > 0) {
+              updateTag('tagHeart', 'LOW HR', 'low');
+              activeAlerts.push(`Low Heart Rate (${heartRateVal} bpm)`);
+              isHeartAlert = true;
+            } else {
+              updateTag('tagHeart', 'NORMAL', 'normal');
+            }
           }
+          setCardHighlight('cardHeart', isHeartAlert);
 
-          // Body Temperature Status (MED_BODY_TEMP_FEVER: 38.8°C / 101.8°F, MED_BODY_TEMP_HYPO: 35.0°C / 95.0°F)
+          // Body Temperature
+          let isBodyTempAlert = false;
           if (rawBodyTemp >= 38.8 || bodyTempFahrenheit >= 101.8) {
             updateTag('tagBodyTemp', 'HIGH', 'high');
-          } else if ((rawBodyTemp > 0 && rawBodyTemp < 35.0) || (bodyTempFahrenheit > 0 && bodyTempFahrenheit < 95.0)) {
+            activeAlerts.push(`Fever Temp (${bodyTempFahrenheit.toFixed(1)}°F)`);
+            isBodyTempAlert = true;
+          } else if (rawBodyTemp > 0 && rawBodyTemp < 35.0) {
             updateTag('tagBodyTemp', 'LOW', 'low');
+            activeAlerts.push(`Low Body Temp (${bodyTempFahrenheit.toFixed(1)}°F)`);
+            isBodyTempAlert = true;
+          } else if (rawBodyTemp === 0) {
+            updateTag('tagBodyTemp', 'OFFLINE', 'off');
           } else {
             updateTag('tagBodyTemp', 'NORMAL', 'normal');
           }
+          setCardHighlight('cardBodyTemp', isBodyTempAlert);
 
-          // Environmental Temperature Status (OSHA_TEMP_WARN_HIGH: 45.2°C, OSHA_TEMP_WARN_LOW: 10.0°C)
+          // Environmental Temperature
+          let isEnvTempAlert = false;
           if (envTempVal >= 45.2) {
             updateTag('tagEnvTemp', 'HIGH', 'high');
-          } else if (envTempVal <= 10.0 && envTempVal > -50) {
+            activeAlerts.push(`High Env Temp (${envTempVal.toFixed(1)}°C)`);
+            isEnvTempAlert = true;
+          } else if (envTempVal > 0 && envTempVal <= 10.0) {
             updateTag('tagEnvTemp', 'LOW', 'low');
+            activeAlerts.push(`Low Env Temp (${envTempVal.toFixed(1)}°C)`);
+            isEnvTempAlert = true;
+          } else if (envTempVal === 0) {
+            updateTag('tagEnvTemp', 'OFFLINE', 'off');
           } else {
             updateTag('tagEnvTemp', 'NORMAL', 'normal');
           }
+          setCardHighlight('cardEnvTemp', isEnvTempAlert);
 
-          // Gas Level Status (OSHA_GAS_DANGER_PPM: 300.0 PPM)
+          // Gas Level (Threshold >= 300 PPM)
+          let isGasAlert = false;
           if (gasVal >= 300.0) {
             updateTag('tagGas', 'HIGH', 'high');
+            activeAlerts.push(`Gas Danger (${gasVal} ppm)`);
+            isGasAlert = true;
           } else {
             updateTag('tagGas', 'NORMAL', 'normal');
           }
+          setCardHighlight('cardGas', isGasAlert);
 
-          // Fall & Motion Status (FALL_IMPACT_G: 1.2G)
+          // Fall & Motion Status (Threshold >= 1.2G)
+          let isFallAlert = false;
           if (accelVal >= 1.2) {
             updateTag('tagMotion', 'FALL DETECTED', 'high');
+            activeAlerts.push(`Fall Detected (${accelVal.toFixed(1)}G)`);
+            isFallAlert = true;
           } else if (accelVal > 0) {
             updateTag('tagMotion', 'NORMAL', 'normal');
           } else {
             updateTag('tagMotion', 'OFFLINE', 'off');
           }
+          setCardHighlight('cardFall', isFallAlert);
 
-         // GPS Location Link Status
-const gpsElem = document.getElementById('valGps');
+          // GPS Location Link Status
+          const gpsElem = document.getElementById('valGps');
+          if (latVal !== 0 && lngVal !== 0) {
+            gpsElem.innerText = "Open Live GPS Map";
+            gpsElem.style.color = "#0284c7";
+            gpsElem.href = `https://www.google.com/maps?q=${latVal},${lngVal}`;
+            gpsElem.target = "_self";
+          } else {
+            gpsElem.innerText = "GPS No Detect";
+            gpsElem.style.color = "#64748b";
+            gpsElem.href = "javascript:void(0);";
+          }
 
-if (latVal !== 0 && lngVal !== 0) {
-  gpsElem.innerText = "Open Live GPS Map";
-  gpsElem.style.color = "#0284c7";
-  gpsElem.href = `https://www.google.com/maps?q=${latVal},${lngVal}`;
-  gpsElem.target = "_self"; // নতুন উইন্ডো বা পপআপে না খুলে একই উইন্ডোতে লোড করবে
-} else {
-  gpsElem.innerText = "GPS No Detect";
-  gpsElem.style.color = "#64748b";
-  gpsElem.href = "javascript:void(0);"; // খালি লিঙ্কে ক্লিক ব্লক করবে
-}
-
-          // Emergency Detection Logic (Exact ESP32 Alert Priority Mapping)
+          // Emergency Detection Logic & Detailed Status Banner
           const isCritical = (gasVal >= 300.0) || (accelVal >= 1.2) || (spo2Val > 0 && spo2Val <= 90);
-          const isWarning = (envTempVal >= 45.2 || envTempVal <= 10.0) || 
-                            (rawBodyTemp >= 38.8 || (rawBodyTemp < 35.0 && rawBodyTemp > 0)) || 
-                            (spo2Val > 0 && (heartRateVal <= 50 || heartRateVal >= 120));
+          const isWarning = isEnvTempAlert || isBodyTempAlert || (spo2Val > 0 && (heartRateVal <= 50 || heartRateVal >= 120));
 
           const statusBanner = document.getElementById('statusBanner');
           const statusText = document.getElementById('statusText');
           const statusIcon = document.getElementById('statusIcon');
 
-          if (isCritical || isWarning) {
+          if (activeAlerts.length > 0) {
             statusBanner.className = "status-banner alert-bg";
-            statusText.innerText = isCritical ? "CRITICAL ALERT DETECTED!" : "SAFETY WARNING DETECTED!";
+            const alertReasonText = activeAlerts.join(" | ");
+            statusText.innerText = (isCritical ? "CRITICAL: " : "WARNING: ") + alertReasonText;
             statusIcon.className = "fa-solid fa-triangle-exclamation";
             
             if (!audioMuted) siren.play().catch(e => {});
 
             if (!lastCriticalState) {
-              triggerPopup("EMERGENCY ALERT", "Hazardous worker condition detected on live sensors!", "fa-triangle-exclamation", "#ef4444");
+              triggerPopup(isCritical ? "CRITICAL EMERGENCY" : "SAFETY WARNING", activeAlerts.join("\n"), "fa-triangle-exclamation", "#ef4444");
               lastCriticalState = true;
             }
           } else {
