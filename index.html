@@ -606,16 +606,19 @@
             updateTag('tagMotion', 'OFFLINE', 'off');
           }
 
-          // GPS Location Link Status
-          if (latVal !== 0 && lngVal !== 0) {
-            document.getElementById('valGps').innerText = "Open Live GPS Map";
-            document.getElementById('valGps').style.color = "#0284c7";
-            document.getElementById('valGps').href = `https://www.google.com/maps?q=${latVal},${lngVal}`;
-          } else {
-            document.getElementById('valGps').innerText = "GPS No Detect";
-            document.getElementById('valGps').style.color = "#64748b";
-            document.getElementById('valGps').href = "#";
-          }
+         // GPS Location Link Status
+const gpsElem = document.getElementById('valGps');
+
+if (latVal !== 0 && lngVal !== 0) {
+  gpsElem.innerText = "Open Live GPS Map";
+  gpsElem.style.color = "#0284c7";
+  gpsElem.href = `https://www.google.com/maps?q=${latVal},${lngVal}`;
+  gpsElem.target = "_self"; // নতুন উইন্ডো বা পপআপে না খুলে একই উইন্ডোতে লোড করবে
+} else {
+  gpsElem.innerText = "GPS No Detect";
+  gpsElem.style.color = "#64748b";
+  gpsElem.href = "javascript:void(0);"; // খালি লিঙ্কে ক্লিক ব্লক করবে
+}
 
           // Emergency Detection Logic (Exact ESP32 Alert Priority Mapping)
           const isCritical = (gasVal >= 300.0) || (accelVal >= 1.2) || (spo2Val > 0 && spo2Val <= 90);
